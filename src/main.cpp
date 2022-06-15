@@ -1,11 +1,13 @@
+#include <Arduino.h>
+
 #include "definicoes_sistema.h"
 #include "controlador.h"
 #include "interface_wifi.h"
 #include "interpretador_g.h"
 #include "sensor_curso.h"
 
-proxEstadoAcao_t matrizTransicaoEstados[NUM_ESTADOS][NUM_EVENTOS]; // matriz de transicao de estados
-estado_t estado; // estado atual
+ProxEstadoAcao matrizTransicaoEstados[NUM_ESTADOS][NUM_EVENTOS]; // matriz de transicao de estados
+Estado estado; // estado atual
 
 // inicializa a matriz de transicao de estados
 void initMatrizTransicao()
@@ -15,7 +17,7 @@ void initMatrizTransicao()
 
     for (i=0; i < NUM_ESTADOS; i++) {
         for (j=0; j < NUM_EVENTOS; j++) {
-            matrizTransicaoEstados[i][j].estado = static_cast<estado_t>(i);
+            matrizTransicaoEstados[i][j].estado = static_cast<Estado>(i);
             matrizTransicaoEstados[i][j].acao = NENHUMA_ACAO;
         }
     }
@@ -42,16 +44,16 @@ void initMatrizTransicao()
     matrizTransicaoEstados[CALIBRANDO][ORIGEM].acao = A04;
 }
 
-evento_t obterEvento() {
+Evento obterEvento() {
     // TODO Determina se um evento ocorreu
     return NENHUM_EVENTO;
 }
 
-proxEstadoAcao_t obterProxEstadoAcao(estado_t estado, evento_t evento) {
+ProxEstadoAcao obterProxEstadoAcao(Estado estado, Evento evento) {
     return matrizTransicaoEstados[estado][evento];
 }
 
-void executarAcao(acao_t acao) {
+void executarAcao(Acao acao) {
     // TODO Executa uma acao
 }
 
@@ -62,9 +64,9 @@ void setup() {
 }
 
 void loop() {
-    evento_t evento = obterEvento();
+    Evento evento = obterEvento();
     if (evento != NENHUM_EVENTO) {
-        proxEstadoAcao_t proxEstadoAcao = obterProxEstadoAcao(estado, evento);
+        ProxEstadoAcao proxEstadoAcao = obterProxEstadoAcao(estado, evento);
         executarAcao(proxEstadoAcao.acao);
         estado = proxEstadoAcao.estado;
     }

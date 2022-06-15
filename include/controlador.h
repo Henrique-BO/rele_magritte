@@ -4,7 +4,9 @@
 class Controlador {
     public:
         Controlador();
-
+        void enviarComando();
+        void calibrar();
+        void origem();
 };
 
 #endif

@@ -5,14 +5,14 @@
 #define NUM_EVENTOS 7
 
 // ESTADOS
-typedef enum estado_t {
+typedef enum Estado {
     IDLE,
     IMPRIMINDO,
     CALIBRANDO
-} estado_t;
+} Estado;
 
 // EVENTOS
-typedef enum evento_t {
+typedef enum Evento {
     NENHUM_EVENTO,
     CALIBRAR, // Botão Calibrar
     IMPRIMIR, // Botão Imprimir
@@ -20,21 +20,21 @@ typedef enum evento_t {
     TERMINADO, // Desenho terminado
     ORIGEM, // Caneta na origem
     CARREGAR // Botão Carregar programa
-} evento_t;
+} Evento;
 
 // ACOES
-typedef enum acao_t {
+typedef enum Acao {
     NENHUMA_ACAO,
     A01,
     A02,
     A03,
     A04
-} acao_t;
+} Acao;
 
 // struct que armazena os codigos de proximo estado e acao
-typedef struct proxEstadoAcao_t {
-    estado_t estado;
-    acao_t acao;
-} proxEstadoAcao_t;
+typedef struct ProxEstadoAcao {
+    Estado estado;
+    Acao acao;
+} ProxEstadoAcao;
 
 #endif

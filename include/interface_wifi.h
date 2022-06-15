@@ -6,6 +6,8 @@ class InterfaceWiFi {
         InterfaceWiFi();
         void carregarPrograma();
         void imprimir();
+        void cancelar();
+        void calibrar();
 };
 
 #endif
