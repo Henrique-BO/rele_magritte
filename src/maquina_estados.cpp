@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include "definicoes_sistema.h"
 #include "maquina_estados.h"
 
 void MaquinaEstados::iniciarMaquinaEstados()
@@ -51,7 +52,12 @@ void MaquinaEstados::iniciarMaquinaEstados()
 
 Evento MaquinaEstados::obterEvento() {
     // TODO Determina se um evento ocorreu
-    return NENHUM_EVENTO;
+    Evento evento;
+    if (xQueueReceive(xQueueEventos, &evento, 0) == pdTRUE) {
+        return evento;
+    } else {
+        return NENHUM_EVENTO;
+    }
 }
 
 ProxEstadoAcao MaquinaEstados::obterProxEstadoAcao(Estado estado, Evento evento) {
@@ -62,7 +68,7 @@ void MaquinaEstados::executarAcao(Acao acao) {
     // TODO Executa uma acao
 }
 
-void MaquinaEstados::executar()
+void MaquinaEstados::taskExecutar()
 {
     while (1) {
         Evento evento = obterEvento();
@@ -70,11 +76,18 @@ void MaquinaEstados::executar()
             ProxEstadoAcao proxEstadoAcao = obterProxEstadoAcao(estado, evento);
             executarAcao(proxEstadoAcao.acao);
             estado = proxEstadoAcao.estado;
+
+            Serial.print("Estado: ");
+            Serial.print(estado);
+            Serial.print("\tEvento: ");
+            Serial.print(evento);
+            Serial.print("\tAcao: ");
+            Serial.println(proxEstadoAcao.acao);
         }
         vTaskDelay(100 / portTICK_PERIOD_MS);
     }
 }
 
 void vTaskMaquinaEstados(void *param) {
-    static_cast<MaquinaEstados *>(param)->executar();
+    static_cast<MaquinaEstados *>(param)->taskExecutar();
 }

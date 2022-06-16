@@ -5,14 +5,19 @@
 // #include "definicoes_sistema.h"
 
 #define MAX_SPEED 100.0
+#define CONTROLADOR_DELAY 10 // TODO calcular a frequencia necessaria
+
+void vTaskControlador(void *param);
 
 class Controlador {
     public:
+        Controlador();
         Controlador(int pinStepX, int pinDirX, int pinStepY, int pinDirY, int pinStepZ, int pinDirZ);
+        void iniciarControlador();
         void enviarComando(int G, float X, float Y, float Z);
         void calibrar();
         void origem();
-        void controlar();
+        void taskControlar();
 
         bool chegou;
     

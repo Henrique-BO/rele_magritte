@@ -3,7 +3,6 @@
 
 #define NUM_ESTADOS 3
 #define NUM_EVENTOS 7
-#define QUEUE_EVENTOS_SIZE 5
 #define FSM_DELAY 100
 
 // ESTADOS
@@ -44,7 +43,7 @@ void vTaskMaquinaEstados(void *param);
 class MaquinaEstados {
     public:
         void iniciarMaquinaEstados();
-        void executar();
+        void taskExecutar();
 
     private:
         Evento obterEvento();
