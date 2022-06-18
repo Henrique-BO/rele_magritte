@@ -1,7 +1,6 @@
 #ifndef INTERPRETADOR_G_H
 #define INTERPRETADOR_G_H
 
-#include "FS.h"
 #include "GCodeParser.h"
 #include "controlador.h"
 

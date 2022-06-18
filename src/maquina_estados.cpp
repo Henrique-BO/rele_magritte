@@ -68,6 +68,11 @@ void MaquinaEstados::executarAcao(Acao acao) {
     // TODO Executa uma acao
 }
 
+Estado MaquinaEstados::getEstado() 
+{
+    return estado;
+}
+
 void MaquinaEstados::taskExecutar()
 {
     while (1) {

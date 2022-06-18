@@ -44,6 +44,7 @@ class MaquinaEstados {
     public:
         void iniciarMaquinaEstados();
         void taskExecutar();
+        Estado getEstado();
 
     private:
         Evento obterEvento();

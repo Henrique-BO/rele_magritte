@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Relé Magritte</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+  <h1>Relé Magritte</h1>
+  
+  <p>Estado: <strong> %ESTADO%</strong></p>
+  
+  <p><a href="/imprimir"><button class="button">Imprimir</button></a></p>
+  <p><a href="/cancelar"><button class="button cancelar">Cancelar</button></a></p>
+  
+  <br>
+  <p><a href="/calibrar"><button class="button">Calibrar</button></a></p>
+
+  <br>
+  <h2>Selecionar novo programa</h2>
+  <form action="/carregar" method="POST" enctype="multipart/form-data">
+      <input type="file" name="programa" id="programa" value=""><br>
+      <button class="button" type="submit">Carregar programa</button>
+  </form>
+</body>
+</html>
