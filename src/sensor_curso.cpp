@@ -1,6 +1,12 @@
+#include <Arduino.h>
 #include "sensor_curso.h"
 
-SensorCurso::SensorCurso(int pin)
+void SensorCurso::iniciarSensor()
 {
-    
+    pinMode(pin, INPUT_PULLUP);
+}
+
+bool SensorCurso::origem()
+{
+    return digitalRead(pin);
 }

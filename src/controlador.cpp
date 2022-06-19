@@ -2,13 +2,11 @@
 #include "AccelStepper.h"
 #include <cmath>
 
+#include "maquina_estados.h"
 #include "controlador.h"
-#include "definicoes_sistema.h"
 
-Controlador::Controlador(){}
-
-Controlador::Controlador(int pinStepX, int pinDirX, int pinStepY, int pinDirY, int pinStepZ, int pinDirZ)
-{
+Controlador::Controlador(int pinStepX, int pinDirX, int pinStepY, int pinDirY, int pinStepZ, int pinDirZ, SensorCurso& sensor1, SensorCurso& sensor2):
+sensorCurso1(sensorCurso1), sensorCurso2(sensorCurso2) {
     pStepperX = new AccelStepper(AccelStepper::DRIVER, pinStepX, pinDirX);
     pStepperY = new AccelStepper(AccelStepper::DRIVER, pinStepY, pinDirY);
     pStepperZ = new AccelStepper(AccelStepper::DRIVER, pinStepZ, pinDirZ);
@@ -16,6 +14,7 @@ Controlador::Controlador(int pinStepX, int pinDirX, int pinStepY, int pinDirY, i
     pStepperX->setMaxSpeed(MAX_SPEED);
     pStepperY->setMaxSpeed(MAX_SPEED);
     pStepperZ->setMaxSpeed(MAX_SPEED);
+    
 }
 
 void Controlador::iniciarControlador()
@@ -31,24 +30,6 @@ void Controlador::iniciarControlador()
     );
 }
 
-void Controlador::taskControlar()
-{
-    while(1) {
-        if (!calibrando) {
-            if ((pStepperX->distanceToGo() == 0) && (pStepperY->distanceToGo() == 0) && (pStepperZ->distanceToGo() == 0)) {
-                chegou = true;
-            } else {
-                chegou = false;
-                pStepperX->runSpeedToPosition();
-                pStepperY->runSpeedToPosition();
-                pStepperZ->runSpeedToPosition();
-            }
-        } else {
-
-        }
-        vTaskDelay(CONTROLADOR_DELAY / portTICK_PERIOD_MS);
-    }
-}
 
 void Controlador::enviarComando(int G, float X, float Y, float Z)
 {
@@ -82,6 +63,38 @@ void Controlador::enviarComando(int G, float X, float Y, float Z)
     }
 }
 
+void Controlador::calibrar()
+{
+    calibrando = true;
+    pStepperX->move(-1);
+    pStepperX->setSpeed(speed);
+}
+
+void Controlador::taskControlar()
+{
+    while(1) {
+        if (!calibrando) {
+            if ((pStepperX->distanceToGo() == 0) && (pStepperY->distanceToGo() == 0) && (pStepperZ->distanceToGo() == 0)) {
+                chegou = true;
+            } else {
+                chegou = false;
+                pStepperX->runSpeedToPosition();
+                pStepperY->runSpeedToPosition();
+                pStepperZ->runSpeedToPosition();
+            }
+        } else { // calibrando
+            if (sensorCurso1.origem()) {
+                pStepperX->setCurrentPosition(-MARGEM_X);
+                pStepperX->move(1);
+                Evento evento = ORIGEM;
+                while(xQueueSendToBack(xQueueEventos, &evento, portMAX_DELAY) != pdTRUE);
+                calibrando = false;
+            }
+            pStepperX->runSpeedToPosition();
+        }
+        vTaskDelay(CONTROLADOR_DELAY / portTICK_PERIOD_MS);
+    }
+}
 
 void vTaskControlador(void *param)
 {

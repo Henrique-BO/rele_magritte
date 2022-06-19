@@ -1,5 +1,4 @@
 #include <Arduino.h>
-#include "definicoes_sistema.h"
 #include "maquina_estados.h"
 
 void MaquinaEstados::iniciarMaquinaEstados()
@@ -30,7 +29,7 @@ void MaquinaEstados::iniciarMaquinaEstados()
     matrizTransicaoEstados[IMPRIMINDO][TERMINADO].acao = A02;
 
     matrizTransicaoEstados[IMPRIMINDO][CANCELAR].estado = CALIBRANDO;
-    matrizTransicaoEstados[IMPRIMINDO][CANCELAR].acao = A02;
+    matrizTransicaoEstados[IMPRIMINDO][CANCELAR].acao = A05;
     
     // Calibrando
     matrizTransicaoEstados[CALIBRANDO][ORIGEM].estado = IDLE;
@@ -51,7 +50,6 @@ void MaquinaEstados::iniciarMaquinaEstados()
 }
 
 Evento MaquinaEstados::obterEvento() {
-    // TODO Determina se um evento ocorreu
     Evento evento;
     if (xQueueReceive(xQueueEventos, &evento, 0) == pdTRUE) {
         return evento;
@@ -65,7 +63,30 @@ ProxEstadoAcao MaquinaEstados::obterProxEstadoAcao(Estado estado, Evento evento)
 }
 
 void MaquinaEstados::executarAcao(Acao acao) {
-    // TODO Executa uma acao
+    switch(acao) {
+    case NENHUMA_ACAO:
+        break;
+    case A01: // Carregar programa
+        Serial.println("Carregando programa");
+        break;
+    case A02: // Calibrar
+        Serial.println("Iniciando calibração");
+        controlador.calibrar();
+        break;
+    case A03: // Imprimir
+        Serial.println("Iniciando impressão");
+        interpretadorG.imprimir();
+        break;
+    case A04: // Caneta na origem
+        Serial.println("Caneta na origem");
+        break;
+    case A05:
+        Serial.println("Cancelando impressão");
+        interpretadorG.cancelar();
+        Serial.println("Iniciando calibração");
+        controlador.calibrar();
+        break;
+    }
 }
 
 Estado MaquinaEstados::getEstado() 
@@ -89,7 +110,7 @@ void MaquinaEstados::taskExecutar()
             Serial.print("\tAcao: ");
             Serial.println(proxEstadoAcao.acao);
         }
-        vTaskDelay(100 / portTICK_PERIOD_MS);
+        vTaskDelay(FSM_DELAY / portTICK_PERIOD_MS);
     }
 }
 

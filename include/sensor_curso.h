@@ -3,7 +3,12 @@
 
 class SensorCurso {
     public:
-        SensorCurso(int pin);
+        SensorCurso(int pin): pin(pin){}
+        void iniciarSensor();
+        bool origem();
+
+    private:
+        int pin;
 };
 
 #endif

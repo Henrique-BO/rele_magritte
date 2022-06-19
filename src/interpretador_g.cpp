@@ -2,19 +2,13 @@
 #include "SPIFFS.h"
 
 #include "GCodeParser.h"
-#include "definicoes_sistema.h"
-#include "interpretador_g.h"
 #include "maquina_estados.h"
 #include "controlador.h"
+#include "interpretador_g.h"
 
-InterpretadorG::InterpretadorG(){}
-
-void InterpretadorG::iniciarInterpretadorG(Controlador& controlador)
+void InterpretadorG::iniciarInterpretadorG()
 {
-    GCode = GCodeParser();
-    this->controlador = controlador;
     imprimindo = false;
-
     xTaskCreate(
         vTaskInterpretadorG,
         "Interpretador G",

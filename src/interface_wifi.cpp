@@ -3,7 +3,7 @@
 #include "WiFi.h"
 #include "ESPAsyncWebServer.h"
 
-#include "definicoes_sistema.h"
+#include "maquina_estados.h"
 #include "interface_wifi.h"
 
 
@@ -50,6 +50,9 @@ void InterfaceWiFi::iniciarWiFi()
     server.on("/carregar", HTTP_POST, [](AsyncWebServerRequest *request){
         request->send(200);
     }, this->carregarPrograma);
+
+    // Inicia o servidor
+    server.begin();
 }
 
 void InterfaceWiFi::imprimir()
@@ -72,31 +75,33 @@ void InterfaceWiFi::calibrar()
 
 void InterfaceWiFi::carregarPrograma(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
 {
-    // https://github.com/smford/esp32-asyncwebserver-fileupload-example/blob/master/example-01/example-01.ino
-    String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
-    Serial.println(logmessage);
-
-    if (!index) {
-        logmessage = "Upload Start: " + String(filename);
-        // open the file on first call and store the file handle in the request object
-        // request->_tempFile = SPIFFS.open("/" + filename, "w");
-        request->_tempFile = SPIFFS.open("/gcode.txt", "w");
+    if (maquinaEstados.getEstado() == IDLE) {
+        // https://github.com/smford/esp32-asyncwebserver-fileupload-example/blob/master/example-01/example-01.ino
+        String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
         Serial.println(logmessage);
-    }
 
-    if (len) {
-        // stream the incoming chunk to the opened file
-        request->_tempFile.write(data, len);
-        logmessage = "Writing file: " + String(filename) + " index=" + String(index) + " len=" + String(len);
-        Serial.println(logmessage);
-    }
+        if (!index) {
+            logmessage = "Upload Start: " + String(filename);
+            // open the file on first call and store the file handle in the request object
+            // request->_tempFile = SPIFFS.open("/" + filename, "w");
+            request->_tempFile = SPIFFS.open("/gcode.txt", "w");
+            Serial.println(logmessage);
+        }
 
-    if (final) {
-        logmessage = "Upload Complete: " + String(filename) + ",size: " + String(index + len);
-        // close the file handle as the upload is now done
-        request->_tempFile.close();
-        Serial.println(logmessage);
-        request->redirect("/");
+        if (len) {
+            // stream the incoming chunk to the opened file
+            request->_tempFile.write(data, len);
+            logmessage = "Writing file: " + String(filename) + " index=" + String(index) + " len=" + String(len);
+            Serial.println(logmessage);
+        }
+
+        if (final) {
+            logmessage = "Upload Complete: " + String(filename) + ",size: " + String(index + len);
+            // close the file handle as the upload is now done
+            request->_tempFile.close();
+            Serial.println(logmessage);
+            request->redirect("/");
+        }
     }
 }
 

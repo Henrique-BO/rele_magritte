@@ -1,6 +1,8 @@
 #ifndef INTERPRETADOR_G_H
 #define INTERPRETADOR_G_H
 
+#include "SPIFFS.h"
+
 #include "GCodeParser.h"
 #include "controlador.h"
 
@@ -10,8 +12,8 @@ void vTaskInterpretadorG(void *param);
 
 class InterpretadorG {
     public:
-        InterpretadorG();
-        void iniciarInterpretadorG(Controlador &controlador);
+        InterpretadorG(Controlador& controlador): controlador(controlador){}
+        void iniciarInterpretadorG();
         void imprimir();
         void cancelar();
         void taskExecutar();
