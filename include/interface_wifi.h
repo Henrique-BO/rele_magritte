@@ -6,16 +6,16 @@
 #define SSID "abcabc"
 #define PASSWORD "abcabc"
 
-String processor(const String& var);
 
 class InterfaceWiFi {
     public:
         InterfaceWiFi(): server(AsyncWebServer(80)) {}
         void iniciarWiFi();
-        void carregarPrograma();
         void imprimir();
         void cancelar();
         void calibrar();
+        static void carregarPrograma(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
+        static String processor(const String& var);
 
     private:
         AsyncWebServer server;
