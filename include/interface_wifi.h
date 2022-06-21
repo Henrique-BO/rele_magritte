@@ -3,8 +3,8 @@
 
 #include "ESPAsyncWebServer.h"
 
-#define SSID "abcabc"
-#define PASSWORD "abcabc"
+#define SSID "Magdolna"
+#define PASSWORD "41308133"
 
 
 class InterfaceWiFi {
@@ -16,9 +16,12 @@ class InterfaceWiFi {
         void calibrar();
         static void carregarPrograma(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
         static String processor(const String& var);
+        static void handleEstado(AsyncWebServerRequest *request);
 
     private:
         AsyncWebServer server;
 };
+
+extern InterfaceWiFi interfaceWifi;
 
 #endif

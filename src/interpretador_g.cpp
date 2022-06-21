@@ -8,11 +8,13 @@
 
 void InterpretadorG::iniciarInterpretadorG()
 {
+    Serial.println("[Interpretador G] Iniciando interpretador G");
+
     imprimindo = false;
     xTaskCreate(
         vTaskInterpretadorG,
         "Interpretador G",
-        1000,
+        10000,
         this,
         1,
         NULL
@@ -21,27 +23,34 @@ void InterpretadorG::iniciarInterpretadorG()
 
 void InterpretadorG::imprimir()
 {
-    file = SPIFFS.open("gcode.txt");
+    Serial.println("[InterpretadorG] Iniciando impressão");
+    file = SPIFFS.open("/gcode.txt", FILE_READ);
+    Serial.println("[InterpretadorG] Arquivo gcode.txt aberto");
     imprimindo = true;
 }
 
 void InterpretadorG::cancelar()
 {
     imprimindo = false;
+    file.close();
 }
 
 void InterpretadorG::taskExecutar()
 {
     int G;
     float X, Y, Z;
+    int i = 1;
 
     while(1) {
         if (imprimindo) { // estado Imprimindo
             if (controlador.chegou) { // pode receber próximo comando
                 if (file.available()) {
                     // TODO ler a próxima linha enquanto executa a atual
+                    Serial.print("[InterpretadorG] Lendo linha ");
+                    Serial.println(i++);
                     while(!GCode.AddCharToLine(file.read())); // Le uma linha inteira do arquivo
                     GCode.ParseLine();
+                    Serial.println("[InterpretadorG] Linha lida");
                     
                     if (GCode.HasWord('G')) {
                         G = GCode.GetWordValue('G');
@@ -62,12 +71,14 @@ void InterpretadorG::taskExecutar()
                     Evento evento = TERMINADO;
                     if (xQueueSendToBack(xQueueEventos, &evento, portMAX_DELAY) == pdTRUE) {
                         imprimindo = false;
+                        file.close();
+                        i = 0;
                     }
                 }
 
             }
         }
-        vTaskDelay(INTERPRETADOR_DELAY / portTICK_PERIOD_MS);
+        vTaskDelay(pdTICKS_TO_MS(INTERPRETADOR_DELAY));
     }
 }
 

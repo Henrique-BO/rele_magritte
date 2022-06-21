@@ -11,4 +11,7 @@ class SensorCurso {
         int pin;
 };
 
+extern SensorCurso sensorCurso1;
+extern SensorCurso sensorCurso2;
+
 #endif

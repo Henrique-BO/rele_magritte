@@ -15,24 +15,24 @@ void vTaskControlador(void *param);
 
 class Controlador {
     public:
-        Controlador(int pinStepX, int pinDirX, int pinStepY, int pinDirY, int pinStepZ, int pinDirZ, SensorCurso& sensorCurso1, SensorCurso& sensorCurso2);
+        Controlador(int pinStepX, int pinDirX, int pinStepY, int pinDirY, int pinStepZ, int pinDirZ);
         void iniciarControlador();
         void enviarComando(int G, float X, float Y, float Z);
         void calibrar();
         void origem();
         void taskControlar();
 
-        bool chegou;
+        bool chegou = false; // TODO semaforo/mutex
     
     private:
         AccelStepper *pStepperX;
         AccelStepper *pStepperY;
         AccelStepper *pStepperZ;
-        SensorCurso sensorCurso1;
-        SensorCurso sensorCurso2;
 
         float speed = 100.0;
         bool calibrando = false;
 };
+
+extern Controlador controlador;
 
 #endif

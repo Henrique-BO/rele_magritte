@@ -9,13 +9,15 @@
 
 void InterfaceWiFi::iniciarWiFi()
 {
+    Serial.println("[InterfaceWiFi] Iniciando interface WiFi");
+
     // Conectar no WiFI
     WiFi.begin(SSID, PASSWORD);
     while (WiFi.status() != WL_CONNECTED) {
         delay(1000);
-        Serial.println("Conectando no WiFi...");
+        Serial.println("[InterfaceWiFi] Conectando no WiFi...");
     }
-    Serial.print("Conectado no IP: ");
+    Serial.print("[InterfaceWiFi] Conectado no IP: ");
     Serial.println(WiFi.localIP());
 
     // Página principal
@@ -30,6 +32,7 @@ void InterfaceWiFi::iniciarWiFi()
 
     // Botão imprimir
     server.on("/imprimir", HTTP_GET, [this](AsyncWebServerRequest *request){
+        Serial.println("[InterfaceWiFi] Botão imprimir");
         this->imprimir();    
         request->redirect("/"); // TODO provavelmente não vai dar tempo de atualizar o estado
     });
@@ -37,6 +40,7 @@ void InterfaceWiFi::iniciarWiFi()
     // Botão cancelar
     server.on("/cancelar", HTTP_GET, [this](AsyncWebServerRequest *request){
         this->cancelar();    
+        Serial.println("[InterfaceWiFi] Botão cancelar");
         request->redirect("/"); // TODO provavelmente não vai dar tempo de atualizar o estado
     });
 
@@ -50,6 +54,9 @@ void InterfaceWiFi::iniciarWiFi()
     server.on("/carregar", HTTP_POST, [](AsyncWebServerRequest *request){
         request->send(200);
     }, this->carregarPrograma);
+
+    // AJAX update estado
+    server.on("/updateEstado", HTTP_GET, handleEstado);
 
     // Inicia o servidor
     server.begin();
@@ -77,11 +84,11 @@ void InterfaceWiFi::carregarPrograma(AsyncWebServerRequest *request, String file
 {
     if (maquinaEstados.getEstado() == IDLE) {
         // https://github.com/smford/esp32-asyncwebserver-fileupload-example/blob/master/example-01/example-01.ino
-        String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
+        String logmessage = "[InterfaceWiFi] Client:" + request->client()->remoteIP().toString() + " " + request->url();
         Serial.println(logmessage);
 
         if (!index) {
-            logmessage = "Upload Start: " + String(filename);
+            logmessage = "[InterfaceWiFi] Upload Start: " + String(filename);
             // open the file on first call and store the file handle in the request object
             // request->_tempFile = SPIFFS.open("/" + filename, "w");
             request->_tempFile = SPIFFS.open("/gcode.txt", "w");
@@ -91,12 +98,12 @@ void InterfaceWiFi::carregarPrograma(AsyncWebServerRequest *request, String file
         if (len) {
             // stream the incoming chunk to the opened file
             request->_tempFile.write(data, len);
-            logmessage = "Writing file: " + String(filename) + " index=" + String(index) + " len=" + String(len);
+            logmessage = "[InterfaceWiFi] Writing file: " + String(filename) + " index=" + String(index) + " len=" + String(len);
             Serial.println(logmessage);
         }
 
         if (final) {
-            logmessage = "Upload Complete: " + String(filename) + ",size: " + String(index + len);
+            logmessage = "[InterfaceWiFi] Upload Complete: " + String(filename) + ",size: " + String(index + len);
             // close the file handle as the upload is now done
             request->_tempFile.close();
             Serial.println(logmessage);
@@ -106,7 +113,7 @@ void InterfaceWiFi::carregarPrograma(AsyncWebServerRequest *request, String file
 }
 
 String InterfaceWiFi::processor(const String& var){
-  Serial.println(var);
+  Serial.println("[InterfaceWiFi] " + var);
   if(var == "ESTADO"){
     switch(maquinaEstados.getEstado()) {
     case IDLE:
@@ -118,4 +125,21 @@ String InterfaceWiFi::processor(const String& var){
     }
   }
   return String();
+}
+
+void InterfaceWiFi::handleEstado(AsyncWebServerRequest *request)
+{
+    String sEstado;
+    switch(maquinaEstados.getEstado()) {
+    case IDLE:
+        sEstado = "Idle";
+        break;
+    case IMPRIMINDO:
+        sEstado = "Imprimindo";
+        break;
+    case CALIBRANDO:
+        sEstado = "Calibrando";
+        break;
+    }
+    request->send(200, "text/plane", sEstado);
 }

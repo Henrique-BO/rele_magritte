@@ -3,6 +3,8 @@
 
 void MaquinaEstados::iniciarMaquinaEstados()
 {
+    Serial.println("[MaquinaEstados] Iniciando máquina de estados");
+    
     // inicializa a matriz de transicao de estados
     int i;
     int j;
@@ -42,9 +44,9 @@ void MaquinaEstados::iniciarMaquinaEstados()
     xTaskCreate(
         vTaskMaquinaEstados,
         "Máquina de Estados",
-        1000,
+        10000,
         this,
-        1,
+        2,
         NULL
     );
 }
@@ -67,23 +69,23 @@ void MaquinaEstados::executarAcao(Acao acao) {
     case NENHUMA_ACAO:
         break;
     case A01: // Carregar programa
-        Serial.println("Carregando programa");
+        Serial.println("[MaquinaEstados] Carregando programa");
         break;
     case A02: // Calibrar
-        Serial.println("Iniciando calibração");
+        Serial.println("[MaquinaEstados] Iniciando calibração");
         controlador.calibrar();
         break;
     case A03: // Imprimir
-        Serial.println("Iniciando impressão");
+        Serial.println("[MaquinaEstados] Iniciando impressão");
         interpretadorG.imprimir();
         break;
     case A04: // Caneta na origem
-        Serial.println("Caneta na origem");
+        Serial.println("[MaquinaEstados] Caneta na origem");
         break;
     case A05:
-        Serial.println("Cancelando impressão");
+        Serial.println("[MaquinaEstados] Cancelando impressão");
         interpretadorG.cancelar();
-        Serial.println("Iniciando calibração");
+        Serial.println("[MaquinaEstados] Iniciando calibração");
         controlador.calibrar();
         break;
     }
@@ -97,13 +99,14 @@ Estado MaquinaEstados::getEstado()
 void MaquinaEstados::taskExecutar()
 {
     while (1) {
+        // Serial.println("[MaquinaEstados] Ciclo");
         Evento evento = obterEvento();
         if (evento != NENHUM_EVENTO) {
             ProxEstadoAcao proxEstadoAcao = obterProxEstadoAcao(estado, evento);
             executarAcao(proxEstadoAcao.acao);
             estado = proxEstadoAcao.estado;
 
-            Serial.print("Estado: ");
+            Serial.print("[MaquinaEstados] Estado: ");
             Serial.print(estado);
             Serial.print("\tEvento: ");
             Serial.print(evento);

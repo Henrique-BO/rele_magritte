@@ -12,7 +12,7 @@ void vTaskInterpretadorG(void *param);
 
 class InterpretadorG {
     public:
-        InterpretadorG(Controlador& controlador): controlador(controlador){}
+        InterpretadorG(){}
         void iniciarInterpretadorG();
         void imprimir();
         void cancelar();
@@ -21,8 +21,9 @@ class InterpretadorG {
     private:
         File file;
         GCodeParser GCode;
-        Controlador controlador;
         bool imprimindo = false;
 };
+
+extern InterpretadorG interpretadorG;
 
 #endif

@@ -33,12 +33,12 @@ typedef enum Estado {
  */
 typedef enum Evento {
     NENHUM_EVENTO,
-    CALIBRAR, // Botão Calibrar
-    IMPRIMIR, // Botão Imprimir
-    CANCELAR, // Botão Cancelar desenho
-    TERMINADO, // Desenho terminado
-    ORIGEM, // Caneta na origem
-    CARREGAR // Botão Carregar programa
+    CALIBRAR, // 1 Botão Calibrar
+    IMPRIMIR, // 2 Botão Imprimir
+    CANCELAR, // 3 Botão Cancelar desenho
+    TERMINADO, // 4 Desenho terminado
+    ORIGEM, // 5 Caneta na origem
+    CARREGAR // 6 Botão Carregar programa
 } Evento;
 
 /**
@@ -69,8 +69,7 @@ typedef struct ProxEstadoAcao {
  */
 class MaquinaEstados {
     public:
-        MaquinaEstados(Controlador& controlador, InterpretadorG& interpretadorG): 
-            controlador(controlador), interpretadorG(interpretadorG) {} 
+        MaquinaEstados(){} 
 
         /**
          * @brief Inicia a Máquina de Estados, criando a matriz de transição de estados e a task do FreeRTOS
@@ -103,8 +102,6 @@ class MaquinaEstados {
 
         ProxEstadoAcao matrizTransicaoEstados[NUM_ESTADOS][NUM_EVENTOS]; // matriz de transicao de estados
         Estado estado; // estado atual
-        Controlador controlador; // TODO precisa de Controlador& ?? 
-        InterpretadorG interpretadorG;
 };
 
 /**

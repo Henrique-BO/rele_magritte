@@ -4,9 +4,10 @@
 
 #include "maquina_estados.h"
 #include "controlador.h"
+#include "sensor_curso.h"
 
-Controlador::Controlador(int pinStepX, int pinDirX, int pinStepY, int pinDirY, int pinStepZ, int pinDirZ, SensorCurso& sensor1, SensorCurso& sensor2):
-sensorCurso1(sensorCurso1), sensorCurso2(sensorCurso2) {
+Controlador::Controlador(int pinStepX, int pinDirX, int pinStepY, int pinDirY, int pinStepZ, int pinDirZ) 
+{
     pStepperX = new AccelStepper(AccelStepper::DRIVER, pinStepX, pinDirX);
     pStepperY = new AccelStepper(AccelStepper::DRIVER, pinStepY, pinDirY);
     pStepperZ = new AccelStepper(AccelStepper::DRIVER, pinStepZ, pinDirZ);
@@ -19,6 +20,8 @@ sensorCurso1(sensorCurso1), sensorCurso2(sensorCurso2) {
 
 void Controlador::iniciarControlador()
 {
+    Serial.println("[Controlador] Iniciando controlador");
+
     calibrando = false;
     xTaskCreate(
         vTaskControlador,
