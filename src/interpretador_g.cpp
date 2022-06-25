@@ -27,6 +27,7 @@ void InterpretadorG::imprimir()
     file = SPIFFS.open("/gcode.txt", FILE_READ);
     Serial.println("[InterpretadorG] Arquivo gcode.txt aberto");
     imprimindo = true;
+    line_number = 1;
 }
 
 void InterpretadorG::cancelar()
@@ -39,15 +40,19 @@ void InterpretadorG::taskExecutar()
 {
     int G;
     float X, Y, Z;
-    int i = 1;
+
+    while(xSemaphoreControlador == NULL) {
+        vTaskDelay(pdMS_TO_TICKS(INTERPRETADOR_DELAY));
+    }
 
     while(1) {
-        if (imprimindo) { // estado Imprimindo
-            if (controlador.chegou) { // pode receber próximo comando
+        if (imprimindo && (xSemaphoreControlador != NULL)) { // estado Imprimindo
+            // Serial.println("[InterpretadorG] Aguardando semáforo");
+            if (xSemaphoreTake(xSemaphoreControlador, (TickType_t) 0) == pdTRUE) {
+                Serial.println("[InterpretadorG] Semáforo capturado");
                 if (file.available()) {
                     // TODO ler a próxima linha enquanto executa a atual
-                    Serial.print("[InterpretadorG] Lendo linha ");
-                    Serial.println(i++);
+                    Serial.printf("[InterpretadorG] Lendo linha %d\n", line_number++);
                     while(!GCode.AddCharToLine(file.read())); // Le uma linha inteira do arquivo
                     GCode.ParseLine();
                     Serial.println("[InterpretadorG] Linha lida");
@@ -68,17 +73,19 @@ void InterpretadorG::taskExecutar()
                     controlador.enviarComando(G, X, Y, Z);
 
                 } else { // quando termina a última linha
+                    Serial.println("[InterpretadorG] Programa terminado");
                     Evento evento = TERMINADO;
                     if (xQueueSendToBack(xQueueEventos, &evento, portMAX_DELAY) == pdTRUE) {
                         imprimindo = false;
                         file.close();
-                        i = 0;
+                    } else {
+                        Serial.println("[InterpretadorG] Erro ao enviar evento à fila");
                     }
                 }
-
+                xSemaphoreGive(xSemaphoreControlador);
             }
         }
-        vTaskDelay(pdTICKS_TO_MS(INTERPRETADOR_DELAY));
+        vTaskDelay(pdMS_TO_TICKS(INTERPRETADOR_DELAY));
     }
 }
 

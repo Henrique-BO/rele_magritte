@@ -91,12 +91,7 @@ class MaquinaEstados {
         Estado getEstado();
 
     private:
-        /**
-         * @brief Verifica se algum evento ocorreu
-         * 
-         * @return O evento que ocorreu, ou NENHUM_EVENTO caso contrário
-         */
-        Evento obterEvento();
+        // Evento obterEvento();
         ProxEstadoAcao obterProxEstadoAcao(Estado estado, Evento evento);
         void executarAcao(Acao acao);
 
@@ -104,23 +99,10 @@ class MaquinaEstados {
         Estado estado; // estado atual
 };
 
-/**
- * @brief Wrapper da função MaquinaEstados::taskExecutar para criação de task FreeRTOS
- * 
- * @param param Ponteiro para objeto MaquinaEstados
- */
 void vTaskMaquinaEstados(void *param);
 
-/**
- * @brief Fila de eventos
- * 
- */
-extern QueueHandle_t xQueueEventos;
-
-/**
- * @brief Máquina de Estados como uma variável global
- * 
- */
 extern MaquinaEstados maquinaEstados;
+
+extern QueueHandle_t xQueueEventos;
 
 #endif

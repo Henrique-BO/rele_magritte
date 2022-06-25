@@ -22,6 +22,7 @@ class InterpretadorG {
         File file;
         GCodeParser GCode;
         bool imprimindo = false;
+        int line_number = 1;
 };
 
 extern InterpretadorG interpretadorG;

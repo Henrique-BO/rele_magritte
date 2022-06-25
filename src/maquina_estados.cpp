@@ -51,15 +51,6 @@ void MaquinaEstados::iniciarMaquinaEstados()
     );
 }
 
-Evento MaquinaEstados::obterEvento() {
-    Evento evento;
-    if (xQueueReceive(xQueueEventos, &evento, 0) == pdTRUE) {
-        return evento;
-    } else {
-        return NENHUM_EVENTO;
-    }
-}
-
 ProxEstadoAcao MaquinaEstados::obterProxEstadoAcao(Estado estado, Evento evento) {
     return matrizTransicaoEstados[estado][evento];
 }
@@ -100,20 +91,26 @@ void MaquinaEstados::taskExecutar()
 {
     while (1) {
         // Serial.println("[MaquinaEstados] Ciclo");
-        Evento evento = obterEvento();
+        Evento evento;
+        if (xQueueReceive(xQueueEventos, &evento, portMAX_DELAY) == pdTRUE) {
+            Serial.println("[MaquinaEstados] Evento recebido");
+        } else {
+            Serial.println("[MaquinaEstados] Falha ao receber evento");
+        }
         if (evento != NENHUM_EVENTO) {
             ProxEstadoAcao proxEstadoAcao = obterProxEstadoAcao(estado, evento);
-            executarAcao(proxEstadoAcao.acao);
-            estado = proxEstadoAcao.estado;
 
             Serial.print("[MaquinaEstados] Estado: ");
-            Serial.print(estado);
+            Serial.print(proxEstadoAcao.estado);
             Serial.print("\tEvento: ");
             Serial.print(evento);
             Serial.print("\tAcao: ");
             Serial.println(proxEstadoAcao.acao);
+            
+            executarAcao(proxEstadoAcao.acao);
+            estado = proxEstadoAcao.estado;
         }
-        vTaskDelay(FSM_DELAY / portTICK_PERIOD_MS);
+        // vTaskDelay(FSM_DELAY / portTICK_PERIOD_MS);
     }
 }
 

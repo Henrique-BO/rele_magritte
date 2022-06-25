@@ -3,10 +3,6 @@
 
 #include "ESPAsyncWebServer.h"
 
-#define SSID "Magdolna"
-#define PASSWORD "41308133"
-
-
 class InterfaceWiFi {
     public:
         InterfaceWiFi(): server(AsyncWebServer(80)) {}

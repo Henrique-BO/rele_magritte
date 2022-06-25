@@ -5,6 +5,7 @@
 
 #include "maquina_estados.h"
 #include "interface_wifi.h"
+#include "credenciais.h"
 
 
 void InterfaceWiFi::iniciarWiFi()
@@ -113,7 +114,7 @@ void InterfaceWiFi::carregarPrograma(AsyncWebServerRequest *request, String file
 }
 
 String InterfaceWiFi::processor(const String& var){
-  Serial.println("[InterfaceWiFi] " + var);
+//   Serial.println("[InterfaceWiFi] " + var);
   if(var == "ESTADO"){
     switch(maquinaEstados.getEstado()) {
     case IDLE:

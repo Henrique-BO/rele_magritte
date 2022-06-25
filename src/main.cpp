@@ -37,6 +37,7 @@ void setup() {
 
     // Inicia o serial
     Serial.begin(115200);
+    Serial.println("\n==== Relé Magritte ===");
 
     // Sistema de arquivos
     if (!SPIFFS.begin()) {
@@ -85,8 +86,7 @@ void setup() {
     // Inicializa o interpretador de código G
     interpretadorG.iniciarInterpretadorG();
 
-    // vTaskStartScheduler();
-    // while (1);
+    Serial.println("==== Inicialização concluída! ====\n");
 }
 
 void loop() {
