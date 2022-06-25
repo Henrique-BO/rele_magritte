@@ -54,6 +54,31 @@ typedef enum Acao {
     A05
 } Acao;
 
+const String estados_str[] = {
+        "Idle",
+        "Imprimindo",
+        "Calibrando"
+    };
+
+const String eventos_str[] = {
+    "Nenhum evento",
+    "Calibrar",
+    "Imprimir",
+    "Cancelar",
+    "Terminado",
+    "Origem",
+    "Carregar"
+};
+
+const String acoes_str[] = {
+    "Nenhuma ação",
+    "A01",
+    "A02",
+    "A03",
+    "A04",
+    "A05"
+};
+
 /**
  * @brief Struct que armazena o próximo estado e a ação a ser realizada
  * 

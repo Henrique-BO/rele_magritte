@@ -90,12 +90,6 @@ void setup() {
 }
 
 void loop() {
-    // static int i = 0;
-    // Serial.print("Hello World! ");
-    // Serial.print(i++);
-    // Serial.print("\t");
-    // Serial.println(sensorCurso1.origem());
-    // vTaskDelay(pdMS_TO_TICKS(5000));
 }
 
 

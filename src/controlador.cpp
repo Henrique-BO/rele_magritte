@@ -17,6 +17,8 @@ Controlador::Controlador(int pinStepX, int pinDirX, int pinStepY, int pinDirY, i
     pStepperX->setMaxSpeed(MAX_SPEED);
     pStepperY->setMaxSpeed(MAX_SPEED);
     pStepperZ->setMaxSpeed(MAX_SPEED);
+
+    pStepperY->setPinsInverted(true, false, false);
 }
 
 void Controlador::iniciarControlador()
@@ -34,11 +36,31 @@ void Controlador::iniciarControlador()
     );
 }
 
-void Controlador::enviarComando(int G, float X, float Y, float Z)
+// void Controlador::enviarComando(int G, float X, float Y, float Z)
+void Controlador::enviarComando(GCodeParser *pGCode)
 {
-    int stepsX = (int) round(X * STEPS_POR_MM_X);
-    int stepsY = (int) round(Y * STEPS_POR_MM_Y);
-    int stepsZ = (int) round(Z * STEPS_POR_MM_Z);
+    static int G = -1;
+    static int stepsX, stepsY, stepsZ;
+
+    if (pGCode->HasWord('G')) {
+        G = pGCode->GetWordValue('G');
+    }
+    if (pGCode->HasWord('X')) {
+        int X = pGCode->GetWordValue('X');
+        stepsX = (int) round(X * STEPS_POR_MM_X);
+    }
+    if (pGCode->HasWord('Y')) {
+        int Y = pGCode->GetWordValue('Y');
+        stepsY = (int) round(Y * STEPS_POR_MM_Y);
+    }
+    if (pGCode->HasWord('Z')) {
+        int Z = pGCode->GetWordValue('Z');
+        if (Z >= 0) {
+            stepsZ = 0;
+        } else {
+            stepsZ = Z_CANETA_BAIXA;
+        }
+    }
 
     Serial.printf("[Controlador] G%d stepsX=%d stepsY=%d stepsZ=%d\n", G, stepsX, stepsY, stepsZ);
 
@@ -57,7 +79,7 @@ void Controlador::enviarComando(int G, float X, float Y, float Z)
         pStepperY->moveTo(stepsY);
         pStepperZ->moveTo(stepsZ);
 
-        // Velocidades para trajetoria reta XY
+        // Velocidades para trajetoria reta no plano XY
         float dist = sqrt(pow(stepsX - pStepperX->currentPosition(),2) + 
                           pow(stepsY - pStepperY->currentPosition(),2) 
                          );
@@ -68,6 +90,7 @@ void Controlador::enviarComando(int G, float X, float Y, float Z)
         pStepperY->setSpeed(speedY);
         pStepperZ->setSpeed(speed);
     }
+    // TODO arcos
 
     mover = true;
 }
@@ -81,18 +104,19 @@ void Controlador::calibrar()
 
     Serial.println("[Controlador] Iniciando calibração");
     pStepperX->setSpeed(-speed);
-    pStepperY->setSpeed(-speed);
-    pStepperZ->setSpeed(-speed);
 }
 
 void Controlador::cancelar()
 {
+    // TODO levantar caneta
     movendo = false;
     flag_cancelar = true;
+    Serial.println("[Controlador] Cancelando movimento");
 }
 
 void Controlador::taskControlar()
 {
+    // TODO quando terminar jogar o papel pra fora
     xSemaphoreGive(xSemaphoreControlador);
 
     TickType_t xLastWakeTime;
@@ -119,8 +143,8 @@ void Controlador::taskControlar()
                 if (xSemaphoreGive(xSemaphoreControlador) != pdTRUE) {
                     Serial.println("[Controlador] Falha ao ceder semáforo");
                 }
-                Serial.println("[Controlador] Movimento cancelado");
                 flag_cancelar = false;
+                Serial.println("[Controlador] Movimento cancelado");
             }
             if (movendo) {
                 if ((pStepperX->distanceToGo() != 0) || (pStepperY->distanceToGo() != 0) || (pStepperZ->distanceToGo() != 0)) {
@@ -146,8 +170,6 @@ void Controlador::taskControlar()
                 calibrando = false;
             }
             pStepperX->runSpeed();
-            pStepperY->runSpeed();
-            pStepperZ->runSpeed();
         }
         // Delay para obter frequência constante
         vTaskDelayUntil(&xLastWakeTime, xFrequency);

@@ -14,6 +14,8 @@ class InterfaceWiFi {
         static String processor(const String& var);
         static void handleEstado(AsyncWebServerRequest *request);
 
+        bool carregando = false;
+
     private:
         AsyncWebServer server;
 };

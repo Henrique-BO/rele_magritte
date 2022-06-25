@@ -34,6 +34,7 @@ void InterpretadorG::cancelar()
 {
     imprimindo = false;
     file.close();
+    Serial.println("[InterpretadorG] Impressão cancelada");
 }
 
 void InterpretadorG::taskExecutar()
@@ -46,8 +47,7 @@ void InterpretadorG::taskExecutar()
     }
 
     while(1) {
-        if (imprimindo && (xSemaphoreControlador != NULL)) { // estado Imprimindo
-            // Serial.println("[InterpretadorG] Aguardando semáforo");
+        if (imprimindo) { // estado Imprimindo
             if (xSemaphoreTake(xSemaphoreControlador, (TickType_t) 0) == pdTRUE) {
                 Serial.println("[InterpretadorG] Semáforo capturado");
                 if (file.available()) {
@@ -57,20 +57,8 @@ void InterpretadorG::taskExecutar()
                     GCode.ParseLine();
                     Serial.println("[InterpretadorG] Linha lida");
                     
-                    if (GCode.HasWord('G')) {
-                        G = GCode.GetWordValue('G');
-                    }
-                    if (GCode.HasWord('X')) {
-                        X = GCode.GetWordValue('X');
-                    }
-                    if (GCode.HasWord('Y')) {
-                        Y = GCode.GetWordValue('Y');
-                    }
-                    if (GCode.HasWord('Z')) {
-                        Z = GCode.GetWordValue('Z');
-                    }
-
-                    controlador.enviarComando(G, X, Y, Z);
+                    // controlador.enviarComando(G, X, Y, Z);
+                    controlador.enviarComando(&GCode);
 
                 } else { // quando termina a última linha
                     Serial.println("[InterpretadorG] Programa terminado");

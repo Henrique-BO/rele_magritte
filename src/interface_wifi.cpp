@@ -14,11 +14,12 @@ void InterfaceWiFi::iniciarWiFi()
 
     // Conectar no WiFI
     WiFi.begin(SSID, PASSWORD);
+    Serial.print("[InterfaceWiFi] Conectando no WiFi...");
     while (WiFi.status() != WL_CONNECTED) {
         delay(1000);
-        Serial.println("[InterfaceWiFi] Conectando no WiFi...");
+        Serial.print(".");
     }
-    Serial.print("[InterfaceWiFi] Conectado no IP: ");
+    Serial.print("\n[InterfaceWiFi] Conectado no IP: ");
     Serial.println(WiFi.localIP());
 
     // Página principal
@@ -66,50 +67,61 @@ void InterfaceWiFi::iniciarWiFi()
 void InterfaceWiFi::imprimir()
 {
     Evento evento = IMPRIMIR;
-    while(xQueueSendToBack(xQueueEventos, &evento, portMAX_DELAY) != pdTRUE);
+    if(xQueueSendToBack(xQueueEventos, &evento, portMAX_DELAY) != pdTRUE) {
+        Serial.println("[InterfaceWiFi] Erro ao enviar evento à fila");
+    }
 }
 
 void InterfaceWiFi::cancelar()
 {
     Evento evento = CANCELAR;
-    while(xQueueSendToBack(xQueueEventos, &evento, portMAX_DELAY) != pdTRUE);
-}
+    if(xQueueSendToBack(xQueueEventos, &evento, portMAX_DELAY) != pdTRUE) {
+        Serial.println("[InterfaceWiFi] Erro ao enviar evento à fila");
+    }}
 
 void InterfaceWiFi::calibrar()
 {
     Evento evento = CALIBRAR;
-    while(xQueueSendToBack(xQueueEventos, &evento, portMAX_DELAY) != pdTRUE);
-}
+    if(xQueueSendToBack(xQueueEventos, &evento, portMAX_DELAY) != pdTRUE) {
+        Serial.println("[InterfaceWiFi] Erro ao enviar evento à fila");
+    }}
 
 void InterfaceWiFi::carregarPrograma(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
 {
-    if (maquinaEstados.getEstado() == IDLE) {
-        // https://github.com/smford/esp32-asyncwebserver-fileupload-example/blob/master/example-01/example-01.ino
-        String logmessage = "[InterfaceWiFi] Client:" + request->client()->remoteIP().toString() + " " + request->url();
+    if (!interfaceWifi.carregando) {
+        Evento evento = CARREGAR;
+        if(xQueueSendToBack(xQueueEventos, &evento, portMAX_DELAY) != pdTRUE) {
+            Serial.println("[InterfaceWiFi] Erro ao enviar evento à fila");
+        }
+    }
+
+    while(!interfaceWifi.carregando) vTaskDelay(pdMS_TO_TICKS(100));
+
+    // https://github.com/smford/esp32-asyncwebserver-fileupload-example/blob/master/example-01/example-01.ino
+    String logmessage = "[InterfaceWiFi] Client: " + request->client()->remoteIP().toString() + " " + request->url();
+    Serial.println(logmessage);
+
+    if (!index) {
+        logmessage = "[InterfaceWiFi] Upload Start: " + String(filename);
+        // open the file on first call and store the file handle in the request object
+        request->_tempFile = SPIFFS.open("/gcode.txt", "w");
         Serial.println(logmessage);
+    }
 
-        if (!index) {
-            logmessage = "[InterfaceWiFi] Upload Start: " + String(filename);
-            // open the file on first call and store the file handle in the request object
-            // request->_tempFile = SPIFFS.open("/" + filename, "w");
-            request->_tempFile = SPIFFS.open("/gcode.txt", "w");
-            Serial.println(logmessage);
-        }
+    if (len) {
+        // stream the incoming chunk to the opened file
+        request->_tempFile.write(data, len);
+        logmessage = "[InterfaceWiFi] Writing file: " + String(filename) + " index=" + String(index) + " len=" + String(len);
+        Serial.println(logmessage);
+    }
 
-        if (len) {
-            // stream the incoming chunk to the opened file
-            request->_tempFile.write(data, len);
-            logmessage = "[InterfaceWiFi] Writing file: " + String(filename) + " index=" + String(index) + " len=" + String(len);
-            Serial.println(logmessage);
-        }
-
-        if (final) {
-            logmessage = "[InterfaceWiFi] Upload Complete: " + String(filename) + ",size: " + String(index + len);
-            // close the file handle as the upload is now done
-            request->_tempFile.close();
-            Serial.println(logmessage);
-            request->redirect("/");
-        }
+    if (final) {
+        logmessage = "[InterfaceWiFi] Upload Complete: " + String(filename) + ",size: " + String(index + len);
+        // close the file handle as the upload is now done
+        request->_tempFile.close();
+        Serial.println(logmessage);
+        request->redirect("/");
+        interfaceWifi.carregando = false;
     }
 }
 

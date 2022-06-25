@@ -3,6 +3,7 @@
 
 #include "AccelStepper.h"
 #include "sensor_curso.h"
+#include "GCodeParser.h"
 
 // Velocidade máxima de deslocamento
 #define MAX_SPEED 30000.0
@@ -10,9 +11,9 @@
 // Resolução de passo de cada eixo
 #define STEPS_POR_MM_X 4.750893824 // 2pi/200*R
 #define STEPS_POR_MM_Y 4.486397268
-#define STEPS_POR_MM_Z 1.0
+#define Z_CANETA_BAIXA -30
 
-// Margem de caibração no eixo X
+// Margem de caibração no eixo X (em steps)
 #define MARGEM_X 10
 
 // Período da Task do controlador
@@ -25,7 +26,8 @@ class Controlador {
     public:
         Controlador(int pinStepX, int pinDirX, int pinStepY, int pinDirY, int pinStepZ, int pinDirZ);
         void iniciarControlador();
-        void enviarComando(int G, float X, float Y, float Z);
+        // void enviarComando(int G, float X, float Y, float Z);
+        void enviarComando(GCodeParser *pGCode);
         void calibrar();
         void cancelar();
         void origem();
@@ -37,7 +39,7 @@ class Controlador {
         AccelStepper *pStepperZ;
 
         // velocidade de deslocamento
-        float speed = 5000.0;
+        float speed = 50.0; // TODO calcular velocidade efetiva
 
         // flags de controle
         bool calibrando = false;

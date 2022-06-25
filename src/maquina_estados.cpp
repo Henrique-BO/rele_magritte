@@ -1,5 +1,7 @@
 #include <Arduino.h>
+
 #include "maquina_estados.h"
+#include "interface_wifi.h"
 
 void MaquinaEstados::iniciarMaquinaEstados()
 {
@@ -27,10 +29,12 @@ void MaquinaEstados::iniciarMaquinaEstados()
     matrizTransicaoEstados[IDLE][IMPRIMIR].acao = A03;
 
     // Imprimindo
-    matrizTransicaoEstados[IMPRIMINDO][TERMINADO].estado = CALIBRANDO;
-    matrizTransicaoEstados[IMPRIMINDO][TERMINADO].acao = A02;
+    // matrizTransicaoEstados[IMPRIMINDO][TERMINADO].estado = CALIBRANDO;
+    // matrizTransicaoEstados[IMPRIMINDO][TERMINADO].acao = A02;
+    matrizTransicaoEstados[IMPRIMINDO][TERMINADO].estado = IDLE;
+    matrizTransicaoEstados[IMPRIMINDO][TERMINADO].acao = A04;
 
-    matrizTransicaoEstados[IMPRIMINDO][CANCELAR].estado = CALIBRANDO;
+    matrizTransicaoEstados[IMPRIMINDO][CANCELAR].estado = IDLE;
     matrizTransicaoEstados[IMPRIMINDO][CANCELAR].acao = A05;
     
     // Calibrando
@@ -44,7 +48,7 @@ void MaquinaEstados::iniciarMaquinaEstados()
     xTaskCreate(
         vTaskMaquinaEstados,
         "Máquina de Estados",
-        10000,
+        20000,
         this,
         2,
         NULL
@@ -61,6 +65,9 @@ void MaquinaEstados::executarAcao(Acao acao) {
         break;
     case A01: // Carregar programa
         Serial.println("[MaquinaEstados] Carregando programa");
+        interfaceWifi.carregando = true;
+        while(interfaceWifi.carregando) vTaskDelay(pdMS_TO_TICKS(100));
+        Serial.println("[MaquinaEstados] Programa carregado");
         break;
     case A02: // Calibrar
         Serial.println("[MaquinaEstados] Iniciando calibração");
@@ -76,8 +83,7 @@ void MaquinaEstados::executarAcao(Acao acao) {
     case A05:
         Serial.println("[MaquinaEstados] Cancelando impressão");
         interpretadorG.cancelar();
-        Serial.println("[MaquinaEstados] Iniciando calibração");
-        controlador.calibrar();
+        controlador.cancelar();
         break;
     }
 }
@@ -90,27 +96,21 @@ Estado MaquinaEstados::getEstado()
 void MaquinaEstados::taskExecutar()
 {
     while (1) {
-        // Serial.println("[MaquinaEstados] Ciclo");
         Evento evento;
-        if (xQueueReceive(xQueueEventos, &evento, portMAX_DELAY) == pdTRUE) {
-            Serial.println("[MaquinaEstados] Evento recebido");
-        } else {
+        if (xQueueReceive(xQueueEventos, &evento, portMAX_DELAY) != pdTRUE) {
             Serial.println("[MaquinaEstados] Falha ao receber evento");
         }
         if (evento != NENHUM_EVENTO) {
             ProxEstadoAcao proxEstadoAcao = obterProxEstadoAcao(estado, evento);
+            Serial.printf("[MaquinaEstados] Evento: %s; Estado: %s; Ação: %s\n", 
+                          eventos_str[evento], 
+                          estados_str[proxEstadoAcao.estado], 
+                          acoes_str[proxEstadoAcao.acao]
+            );
 
-            Serial.print("[MaquinaEstados] Estado: ");
-            Serial.print(proxEstadoAcao.estado);
-            Serial.print("\tEvento: ");
-            Serial.print(evento);
-            Serial.print("\tAcao: ");
-            Serial.println(proxEstadoAcao.acao);
-            
             executarAcao(proxEstadoAcao.acao);
             estado = proxEstadoAcao.estado;
         }
-        // vTaskDelay(FSM_DELAY / portTICK_PERIOD_MS);
     }
 }
 
