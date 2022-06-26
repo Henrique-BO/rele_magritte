@@ -12,6 +12,7 @@
 #define STEPS_POR_MM_X 4.750893824 // 2pi/200*R
 #define STEPS_POR_MM_Y 4.486397268
 #define Z_CANETA_BAIXA -30
+#define Z_CANETA_ALTA 0
 
 // Margem de caibração no eixo X (em steps)
 #define MARGEM_X 10
@@ -43,7 +44,7 @@ class Controlador {
 
         // flags de controle
         bool calibrando = false;
-        bool flag_cancelar = false;
+        // bool flag_cancelar = false;
         bool mover = false;
         bool movendo = false;
 };

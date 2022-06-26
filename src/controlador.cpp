@@ -56,7 +56,7 @@ void Controlador::enviarComando(GCodeParser *pGCode)
     if (pGCode->HasWord('Z')) {
         int Z = pGCode->GetWordValue('Z');
         if (Z >= 0) {
-            stepsZ = 0;
+            stepsZ = Z_CANETA_ALTA;
         } else {
             stepsZ = Z_CANETA_BAIXA;
         }
@@ -100,7 +100,6 @@ void Controlador::calibrar()
     calibrando = true;
     mover = false;
     movendo = false;
-    flag_cancelar = false;
 
     Serial.println("[Controlador] Iniciando calibração");
     pStepperX->setSpeed(-speed);
@@ -108,9 +107,10 @@ void Controlador::calibrar()
 
 void Controlador::cancelar()
 {
-    // TODO levantar caneta
-    movendo = false;
-    flag_cancelar = true;
+    // para os eixos e levanta a caneta
+    pStepperX->moveTo(pStepperX->currentPosition());
+    pStepperY->moveTo(pStepperY->currentPosition());
+    pStepperZ->moveTo(Z_CANETA_ALTA);
     Serial.println("[Controlador] Cancelando movimento");
 }
 
@@ -139,13 +139,6 @@ void Controlador::taskControlar()
                     Serial.println("[Controlador] Falha ao capturar semáforo");
                 }
             }
-            if (flag_cancelar) {
-                if (xSemaphoreGive(xSemaphoreControlador) != pdTRUE) {
-                    Serial.println("[Controlador] Falha ao ceder semáforo");
-                }
-                flag_cancelar = false;
-                Serial.println("[Controlador] Movimento cancelado");
-            }
             if (movendo) {
                 if ((pStepperX->distanceToGo() != 0) || (pStepperY->distanceToGo() != 0) || (pStepperZ->distanceToGo() != 0)) {
                     pStepperX->runSpeedToPosition();
@@ -168,6 +161,7 @@ void Controlador::taskControlar()
                     Serial.println("[Controlador] Erro ao enviar evento à fila");
                 }
                 calibrando = false;
+                Serial.println("[Controlador] Calibração concluída");
             }
             pStepperX->runSpeed();
         }
