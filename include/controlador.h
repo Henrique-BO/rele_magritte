@@ -44,7 +44,6 @@ class Controlador {
 
         // flags de controle
         bool calibrando = false;
-        // bool flag_cancelar = false;
         bool mover = false;
         bool movendo = false;
 };

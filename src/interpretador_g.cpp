@@ -62,6 +62,16 @@ void InterpretadorG::taskExecutar()
 
                 } else { // quando termina a última linha
                     Serial.println("[InterpretadorG] Programa terminado");
+
+                    // Empurra o papel para fora
+                    char line[] = "G00 Y-50";
+                    GCode.ParseLine(line); // TODO calibrar valor de Y para o papel sair
+                    controlador.enviarComando(&GCode);
+                    vTaskDelay(pdMS_TO_TICKS(INTERPRETADOR_DELAY));
+                    if (xSemaphoreTake(xSemaphoreControlador, portMAX_DELAY) != pdTRUE) { // aguarda conclusão do movimento
+                        Serial.println("[InterpretadorG] Falha ao capturar semáforo");
+                    }
+
                     Evento evento = TERMINADO;
                     if (xQueueSendToBack(xQueueEventos, &evento, portMAX_DELAY) == pdTRUE) {
                         imprimindo = false;
