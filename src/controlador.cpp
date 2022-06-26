@@ -40,8 +40,9 @@ void Controlador::iniciarControlador()
 void Controlador::enviarComando(GCodeParser *pGCode)
 {
     static int G = -1;
-    static int stepsX, stepsY, stepsZ;
+    static int stepsX, stepsY, stepsZ, stepsI, stepsJ;
 
+    // trata as palavras recebidas por código G
     if (pGCode->HasWord('G')) {
         G = pGCode->GetWordValue('G');
     }
@@ -61,36 +62,54 @@ void Controlador::enviarComando(GCodeParser *pGCode)
             stepsZ = Z_CANETA_BAIXA;
         }
     }
-
-    Serial.printf("[Controlador] G%d stepsX=%d stepsY=%d stepsZ=%d\n", G, stepsX, stepsY, stepsZ);
+    if (pGCode->HasWord('I')) {
+        int I = pGCode->GetWordValue('I');
+        stepsY = (int) round(I * STEPS_POR_MM_X);
+    }
+    if (pGCode->HasWord('J')) {
+        int J = pGCode->GetWordValue('J');
+        stepsJ = (int) round(J * STEPS_POR_MM_Y);
+    }
 
     if (G == 0) {
         Serial.println("[Controlador] Movimentação rápida");
-        pStepperX->moveTo(stepsX);
-        pStepperY->moveTo(stepsY);
-        pStepperZ->moveTo(stepsZ);
-
-        pStepperX->setSpeed(speed);
-        pStepperY->setSpeed(speed);
-        pStepperZ->setSpeed(speed);
+        linear = false;
+        ponto_steps_t target = {stepsX, stepsY, stepsZ};
+        filaTargets.push(target);
+        
     } else if (G == 1) {
         Serial.println("[Controlador] Movimento linear");
-        pStepperX->moveTo(stepsX);
-        pStepperY->moveTo(stepsY);
-        pStepperZ->moveTo(stepsZ);
+        linear = true;
+        ponto_steps_t target = {stepsX, stepsY, stepsZ};
+        filaTargets.push(target);
 
-        // Velocidades para trajetoria reta no plano XY
-        float dist = sqrt(pow(stepsX - pStepperX->currentPosition(),2) + 
-                          pow(stepsY - pStepperY->currentPosition(),2) 
-                         );
-        float speedX = speed * (stepsX - pStepperX->currentPosition()) / dist;
-        float speedY = speed * (stepsY - pStepperY->currentPosition()) / dist;
-
-        pStepperX->setSpeed(speedX);
-        pStepperY->setSpeed(speedY);
-        pStepperZ->setSpeed(speed);
+    } else if (G == 2) {
+        Serial.println("[Controlador] Movimento em arco CCW");
+        linear = true;
+        ponto_steps_t position = {
+            pStepperX->currentPosition(),
+            pStepperY->currentPosition(),
+            pStepperZ->currentPosition()
+        };
+        ponto_steps_t target = {stepsX, stepsY, stepsZ};
+        ponto_steps_t offset = {stepsI, stepsJ, 0};
+        arco(position, target, offset, true);
+    
+    } else if (G == 3) {
+        Serial.println("[Controlador] Movimento em arco CW");
+        linear = true;
+        ponto_steps_t position = {
+            pStepperX->currentPosition(),
+            pStepperY->currentPosition(),
+            pStepperZ->currentPosition()
+        };
+        ponto_steps_t target = {stepsX, stepsY, stepsZ};
+        ponto_steps_t offset = {stepsI, stepsJ, 0};
+        arco(position, target, offset, false);
+    
+    } else {
+        Serial.println("[Controlador] Comando não implementado");
     }
-    // TODO arcos
 
     mover = true;
 }
@@ -108,10 +127,112 @@ void Controlador::calibrar()
 void Controlador::cancelar()
 {
     // para os eixos e levanta a caneta
-    pStepperX->moveTo(pStepperX->currentPosition());
-    pStepperY->moveTo(pStepperY->currentPosition());
-    pStepperZ->moveTo(Z_CANETA_ALTA);
+    while (!filaTargets.empty()) {
+        filaTargets.pop();
+    }
+    ponto_steps_t target = {
+        pStepperX->currentPosition(),
+        pStepperY->currentPosition(),
+        Z_CANETA_ALTA
+    };
+    filaTargets.push(target);
+    linear = false;
+    nextTarget();
     Serial.println("[Controlador] Cancelando movimento");
+}
+
+void Controlador::nextTarget()
+{
+    float speedX, speedY;
+    
+    // pega próximo target na fila
+    ponto_steps_t target = filaTargets.front();
+    filaTargets.pop();
+
+    pStepperX->moveTo(target.stepsX);
+    pStepperY->moveTo(target.stepsY);
+    pStepperZ->moveTo(target.stepsZ);
+
+    if (linear) {
+        // Velocidades para trajetoria linear no plano XY
+        float dist = sqrt(pow(target.stepsX - pStepperX->currentPosition(),2) + 
+                          pow(target.stepsY - pStepperY->currentPosition(),2) 
+                         );
+        speedX = speed * (target.stepsX - pStepperX->currentPosition()) / dist;
+        speedY = speed * (target.stepsY - pStepperY->currentPosition()) / dist;
+    } else {
+        speedX = speed;
+        speedY = speed;
+    }
+
+    pStepperX->setSpeed(speedX);
+    pStepperY->setSpeed(speedY);
+    pStepperZ->setSpeed(speed);
+    Serial.printf("[Controlador] Segmento X=%d Y=%d Z=%d\n", pStepperX->targetPosition(), pStepperY->targetPosition(), pStepperZ->targetPosition());
+}
+
+void Controlador::arco(ponto_steps_t position, ponto_steps_t target, ponto_steps_t offset, bool is_clockwise_arc)
+{
+    // baseado em https://github.com/gnea/grbl/blob/master/grbl/motion_control.c
+    int centerX = position.stepsX + offset.stepsX;
+    int centerY = position.stepsY + offset.stepsY;
+    float rX = -offset.stepsX;
+    float rY = -offset.stepsY;
+    float rtX = target.stepsX - centerX;
+    float rtY = target.stepsY - centerY;
+    
+    // CCW angle between position and target from circle center. Only one atan2() trig computation required.
+    float angular_travel = atan2(rX*rtY-rY*rtX, rX*rtX+rY*rtY);
+    if (is_clockwise_arc) { // Correct atan2 output per direction
+        if (angular_travel >= -ARC_ANGULAR_TRAVEL_EPSILON) { angular_travel -= 2*M_PI; }
+    } else {
+        if (angular_travel <= ARC_ANGULAR_TRAVEL_EPSILON) { angular_travel += 2*M_PI; }
+    }
+
+    float radius = sqrt(rX*rX + rY*rY);
+    // número de segmentos de reta
+    int segments = floor(fabs(0.5*angular_travel*radius)/
+                          sqrt(ARC_TOLERANCE*(2*radius - ARC_TOLERANCE)) );
+
+    if (segments) {
+        float theta_per_segment = angular_travel/segments;
+
+        float cos_T = 2.0 - theta_per_segment*theta_per_segment;
+        float sin_T = theta_per_segment*0.16666667*(cos_T + 4.0);
+        cos_T *= 0.5;
+
+        float sin_Ti;
+        float cos_Ti;
+        float rY_tmp;
+        int i;
+        int count = 0;
+
+        for (i = 1; i<segments; i++) { // Increment (segments-1).
+            
+            if (count < N_ARC_CORRECTION) {
+                // Apply vector rotation matrix. ~40 usec
+                rY_tmp = rX*sin_T + rY*cos_T;
+                rX = rX*cos_T - rY*sin_T;
+                rY = rY_tmp;
+                count++;
+            } else {
+                // Arc correction to radius vector. Computed only every N_ARC_CORRECTION increments. ~375 usec
+                // Compute exact location by applying transformation matrix from initial radius vector(=-offset).
+                cos_Ti = cos(i*theta_per_segment);
+                sin_Ti = sin(i*theta_per_segment);
+                rX = -offset.stepsX*cos_Ti + offset.stepsY*sin_Ti;
+                rY = -offset.stepsX*sin_Ti - offset.stepsY*cos_Ti;
+                count = 0;
+            }
+
+            // Update arc_target location
+            position.stepsX = centerX + round(rX);
+            position.stepsY = centerX + round(rY);
+            filaTargets.push(position);
+        }
+    }
+    // Ensure last segment arrives at target location.
+    filaTargets.push(target);
 }
 
 void Controlador::taskControlar()
@@ -129,10 +250,10 @@ void Controlador::taskControlar()
     while(1) {
         xLastWakeTime = xTaskGetTickCount();
         if (!calibrando) {
-            if (mover) {
+            if (mover) { // comando de mover do InterpretadorG
                 if (xSemaphoreTake(xSemaphoreControlador, portMAX_DELAY) == pdTRUE) {
                     Serial.println("[Controlador] Semáforo capturado, iniciando movimento");
-                    Serial.printf("[Controlador] dX=%d dY=%d dZ=%d\n", pStepperX->distanceToGo(), pStepperY->distanceToGo(), pStepperZ->distanceToGo());
+                    nextTarget();
                     mover = false;
                     movendo = true;
                 } else {
@@ -144,12 +265,16 @@ void Controlador::taskControlar()
                     pStepperX->runSpeedToPosition();
                     pStepperY->runSpeedToPosition();
                     pStepperZ->runSpeedToPosition();
-                } else {
-                    if (xSemaphoreGive(xSemaphoreControlador) != pdTRUE) {
-                        Serial.println("[Controlador] Falha ao ceder semáforo");
+                } else { // chegou no target atual
+                    if (filaTargets.empty()) {
+                        if (xSemaphoreGive(xSemaphoreControlador) != pdTRUE) {
+                            Serial.println("[Controlador] Falha ao ceder semáforo");
+                        }
+                        movendo = false;
+                        Serial.println("[Controlador] Movimento concluído");
+                    } else { 
+                        nextTarget();
                     }
-                    movendo = false;
-                    Serial.println("[Controlador] Chegou");
                 }
             }
         } else { // calibrando
