@@ -44,33 +44,41 @@ void Controlador::enviarComando(GCodeParser *pGCode)
 
     // trata as palavras recebidas por código G
     // TODO passar o tratamento para o InterpretadorG e receber uma struct com os valores
+    Serial.print("[Controlador] ");
     if (pGCode->HasWord('G')) {
         G = pGCode->GetWordValue('G');
+        Serial.printf("G%d ", G);
     }
     if (pGCode->HasWord('X')) {
-        int X = pGCode->GetWordValue('X');
+        double X = pGCode->GetWordValue('X');
         stepsX = (int) round(X * STEPS_POR_MM_X);
+        Serial.printf("X%f ", X);
     }
     if (pGCode->HasWord('Y')) {
-        int Y = pGCode->GetWordValue('Y');
+        double Y = pGCode->GetWordValue('Y');
         stepsY = (int) round(Y * STEPS_POR_MM_Y);
+        Serial.printf("Y%f ", Y);
     }
     if (pGCode->HasWord('Z')) {
-        int Z = pGCode->GetWordValue('Z');
+        double Z = pGCode->GetWordValue('Z');
         if (Z >= 0) {
             stepsZ = Z_CANETA_ALTA;
         } else {
             stepsZ = Z_CANETA_BAIXA;
         }
+        Serial.printf("Z%f ", Z);
     }
     if (pGCode->HasWord('I')) {
-        int I = pGCode->GetWordValue('I');
-        stepsY = (int) round(I * STEPS_POR_MM_X);
+        double I = pGCode->GetWordValue('I');
+        stepsI = (int) round(I * STEPS_POR_MM_X);
+        Serial.printf("I%f ", I);
     }
     if (pGCode->HasWord('J')) {
-        int J = pGCode->GetWordValue('J');
+        double J = pGCode->GetWordValue('J');
         stepsJ = (int) round(J * STEPS_POR_MM_Y);
+        Serial.printf("J%f ", J);
     }
+    Serial.println("");
 
     if (G == 0) {
         Serial.println("[Controlador] Movimentação rápida");
@@ -94,6 +102,7 @@ void Controlador::enviarComando(GCodeParser *pGCode)
         };
         ponto_steps_t target = {stepsX, stepsY, stepsZ};
         ponto_steps_t offset = {stepsI, stepsJ, 0};
+        Serial.printf("[Controlador] G%d sX%d sY%d sZ%d sI%d sJ%d\n", G, stepsX, stepsY, stepsZ, stepsI, stepsJ);
         arco(position, target, offset, true);
     
     } else if (G == 3) {
@@ -106,10 +115,12 @@ void Controlador::enviarComando(GCodeParser *pGCode)
         };
         ponto_steps_t target = {stepsX, stepsY, stepsZ};
         ponto_steps_t offset = {stepsI, stepsJ, 0};
+        Serial.printf("[Controlador] G%d sX%d sY%d sZ%d sI%d sJ%d\n", G, stepsX, stepsY, stepsZ, stepsI, stepsJ);
         arco(position, target, offset, false);
     
     } else {
         Serial.println("[Controlador] Comando não implementado");
+        return;
     }
 
     mover = true;
@@ -169,11 +180,12 @@ void Controlador::nextTarget()
     pStepperX->setSpeed(speedX);
     pStepperY->setSpeed(speedY);
     pStepperZ->setSpeed(speed);
-    Serial.printf("[Controlador] Segmento X=%d Y=%d Z=%d\n", pStepperX->targetPosition(), pStepperY->targetPosition(), pStepperZ->targetPosition());
+    Serial.printf("[Controlador] Target X=%d Y=%d Z=%d\n", pStepperX->targetPosition(), pStepperY->targetPosition(), pStepperZ->targetPosition());
 }
 
 void Controlador::arco(ponto_steps_t position, ponto_steps_t target, ponto_steps_t offset, bool is_clockwise_arc)
 {
+    Serial.println("[Controlador] Interpolando trajetória em arco");
     // baseado em https://github.com/gnea/grbl/blob/master/grbl/motion_control.c
     int centerX = position.stepsX + offset.stepsX;
     int centerY = position.stepsY + offset.stepsY;
@@ -209,7 +221,6 @@ void Controlador::arco(ponto_steps_t position, ponto_steps_t target, ponto_steps
         int count = 0;
 
         for (i = 1; i<segments; i++) { // Increment (segments-1).
-            
             if (count < N_ARC_CORRECTION) {
                 // Apply vector rotation matrix. ~40 usec
                 rY_tmp = rX*sin_T + rY*cos_T;
@@ -228,7 +239,7 @@ void Controlador::arco(ponto_steps_t position, ponto_steps_t target, ponto_steps
 
             // Update arc_target location
             position.stepsX = centerX + round(rX);
-            position.stepsY = centerX + round(rY);
+            position.stepsY = centerY + round(rY);
             filaTargets.push(position);
         }
     }
@@ -246,6 +257,7 @@ void Controlador::taskControlar()
     while(xSemaphoreControlador == NULL) {
         vTaskDelay(xFrequency);
     }
+    Serial.println("[Controlador] Task iniciada");
 
     while(1) {
         xLastWakeTime = xTaskGetTickCount();
@@ -280,6 +292,7 @@ void Controlador::taskControlar()
         } else { // calibrando
             if (sensorCurso1.origem()) {
                 pStepperX->setCurrentPosition(-MARGEM_X);
+                pStepperY->setCurrentPosition(0);
                 pStepperX->moveTo(0);
                 Evento evento = ORIGEM;
                 if (xQueueSendToBack(xQueueEventos, &evento, portMAX_DELAY) != pdTRUE) {

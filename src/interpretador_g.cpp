@@ -14,7 +14,7 @@ void InterpretadorG::iniciarInterpretadorG()
     xTaskCreate(
         vTaskInterpretadorG,
         "Interpretador G",
-        10000,
+        30000,
         this,
         1,
         NULL
@@ -45,6 +45,7 @@ void InterpretadorG::taskExecutar()
     while(xSemaphoreControlador == NULL) {
         vTaskDelay(pdMS_TO_TICKS(INTERPRETADOR_DELAY));
     }
+    Serial.println("[InterpretadorG] Task iniciada");
 
     while(1) {
         if (imprimindo) { // estado Imprimindo

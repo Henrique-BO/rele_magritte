@@ -48,7 +48,7 @@ void MaquinaEstados::iniciarMaquinaEstados()
     xTaskCreate(
         vTaskMaquinaEstados,
         "Máquina de Estados",
-        20000,
+        50000,
         this,
         2,
         NULL
