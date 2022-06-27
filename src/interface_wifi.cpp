@@ -36,20 +36,20 @@ void InterfaceWiFi::iniciarWiFi()
     server.on("/imprimir", HTTP_GET, [this](AsyncWebServerRequest *request){
         Serial.println("[InterfaceWiFi] Botão imprimir");
         this->imprimir();    
-        request->redirect("/"); // TODO provavelmente não vai dar tempo de atualizar o estado
+        request->redirect("/");
     });
 
     // Botão cancelar
     server.on("/cancelar", HTTP_GET, [this](AsyncWebServerRequest *request){
         this->cancelar();    
         Serial.println("[InterfaceWiFi] Botão cancelar");
-        request->redirect("/"); // TODO provavelmente não vai dar tempo de atualizar o estado
+        request->redirect("/");
     });
 
     // Botão imprimir
     server.on("/calibrar", HTTP_GET, [this](AsyncWebServerRequest *request){
         this->calibrar();    
-        request->redirect("/"); // TODO provavelmente não vai dar tempo de atualizar o estado
+        request->redirect("/");
     });
 
     // Botão carregar programa

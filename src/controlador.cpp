@@ -43,6 +43,7 @@ void Controlador::enviarComando(GCodeParser *pGCode)
     static int stepsX, stepsY, stepsZ, stepsI, stepsJ;
 
     // trata as palavras recebidas por código G
+    // TODO passar o tratamento para o InterpretadorG e receber uma struct com os valores
     if (pGCode->HasWord('G')) {
         G = pGCode->GetWordValue('G');
     }
@@ -237,7 +238,6 @@ void Controlador::arco(ponto_steps_t position, ponto_steps_t target, ponto_steps
 
 void Controlador::taskControlar()
 {
-    // TODO quando terminar jogar o papel pra fora
     xSemaphoreGive(xSemaphoreControlador);
 
     TickType_t xLastWakeTime;
