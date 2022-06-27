@@ -8,7 +8,7 @@
 #include "credenciais.h"
 
 
-void InterfaceWiFi::iniciarWiFi()
+void InterfaceWiFi_t::iniciarWiFi()
 {
     Serial.println("[InterfaceWiFi] Iniciando interface WiFi");
 
@@ -64,7 +64,7 @@ void InterfaceWiFi::iniciarWiFi()
     server.begin();
 }
 
-void InterfaceWiFi::imprimir()
+void InterfaceWiFi_t::imprimir()
 {
     Evento evento = IMPRIMIR;
     if(xQueueSendToBack(xQueueEventos, &evento, portMAX_DELAY) != pdTRUE) {
@@ -72,30 +72,30 @@ void InterfaceWiFi::imprimir()
     }
 }
 
-void InterfaceWiFi::cancelar()
+void InterfaceWiFi_t::cancelar()
 {
     Evento evento = CANCELAR;
     if(xQueueSendToBack(xQueueEventos, &evento, portMAX_DELAY) != pdTRUE) {
         Serial.println("[InterfaceWiFi] Erro ao enviar evento à fila");
     }}
 
-void InterfaceWiFi::calibrar()
+void InterfaceWiFi_t::calibrar()
 {
     Evento evento = CALIBRAR;
     if(xQueueSendToBack(xQueueEventos, &evento, portMAX_DELAY) != pdTRUE) {
         Serial.println("[InterfaceWiFi] Erro ao enviar evento à fila");
     }}
 
-void InterfaceWiFi::carregarPrograma(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
+void InterfaceWiFi_t::carregarPrograma(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
 {
-    if (!interfaceWifi.carregando) {
+    if (!InterfaceWiFi.carregando) {
         Evento evento = CARREGAR;
         if(xQueueSendToBack(xQueueEventos, &evento, portMAX_DELAY) != pdTRUE) {
             Serial.println("[InterfaceWiFi] Erro ao enviar evento à fila");
         }
     }
 
-    while(!interfaceWifi.carregando) vTaskDelay(pdMS_TO_TICKS(100));
+    while(!InterfaceWiFi.carregando) vTaskDelay(pdMS_TO_TICKS(100));
 
     // https://github.com/smford/esp32-asyncwebserver-fileupload-example/blob/master/example-01/example-01.ino
     String logmessage = "[InterfaceWiFi] Client: " + request->client()->remoteIP().toString() + " " + request->url();
@@ -121,14 +121,14 @@ void InterfaceWiFi::carregarPrograma(AsyncWebServerRequest *request, String file
         request->_tempFile.close();
         Serial.println(logmessage);
         request->redirect("/");
-        interfaceWifi.carregando = false;
+        InterfaceWiFi.carregando = false;
     }
 }
 
-String InterfaceWiFi::processor(const String& var){
+String InterfaceWiFi_t::processor(const String& var){
 //   Serial.println("[InterfaceWiFi] " + var);
   if(var == "ESTADO"){
-    switch(maquinaEstados.getEstado()) {
+    switch(MaquinaEstados.getEstado()) {
     case IDLE:
         return "Idle";
     case IMPRIMINDO:
@@ -140,10 +140,10 @@ String InterfaceWiFi::processor(const String& var){
   return String();
 }
 
-void InterfaceWiFi::handleEstado(AsyncWebServerRequest *request)
+void InterfaceWiFi_t::handleEstado(AsyncWebServerRequest *request)
 {
     String sEstado;
-    switch(maquinaEstados.getEstado()) {
+    switch(MaquinaEstados.getEstado()) {
     case IDLE:
         sEstado = "Idle";
         break;

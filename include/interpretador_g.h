@@ -10,9 +10,9 @@
 
 void vTaskInterpretadorG(void *param);
 
-class InterpretadorG {
+class InterpretadorG_t {
     public:
-        InterpretadorG(){}
+        InterpretadorG_t(){}
         void iniciarInterpretadorG();
         void imprimir();
         void cancelar();
@@ -25,6 +25,6 @@ class InterpretadorG {
         int line_number = 1;
 };
 
-extern InterpretadorG interpretadorG;
+extern InterpretadorG_t InterpretadorG;
 
 #endif

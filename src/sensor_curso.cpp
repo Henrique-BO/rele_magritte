@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include "sensor_curso.h"
 
-void SensorCurso::iniciarSensor()
+void SensorCurso_t::iniciarSensor()
 {
     Serial.print("[SensorCurso] Iniciando sensor de fim de curso no pino ");
     Serial.println(pin);
@@ -9,7 +9,7 @@ void SensorCurso::iniciarSensor()
     pinMode(pin, INPUT_PULLUP);
 }
 
-bool SensorCurso::origem()
+bool SensorCurso_t::origem()
 {
     return (digitalRead(pin) == LOW);
 }

@@ -92,9 +92,9 @@ typedef struct ProxEstadoAcao {
  * @brief Classe do componente Máquina de Estados
  * 
  */
-class MaquinaEstados {
+class MaquinaEstados_t {
     public:
-        MaquinaEstados(){} 
+        MaquinaEstados_t(){} 
 
         /**
          * @brief Inicia a Máquina de Estados, criando a matriz de transição de estados e a task do FreeRTOS
@@ -126,7 +126,7 @@ class MaquinaEstados {
 
 void vTaskMaquinaEstados(void *param);
 
-extern MaquinaEstados maquinaEstados;
+extern MaquinaEstados_t MaquinaEstados;
 
 extern QueueHandle_t xQueueEventos;
 

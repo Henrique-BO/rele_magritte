@@ -8,7 +8,7 @@
 
 SemaphoreHandle_t xSemaphoreControlador;
 
-Controlador::Controlador(int pinStepX, int pinDirX, int pinStepY, int pinDirY, int pinStepZ, int pinDirZ) 
+Controlador_t::Controlador_t(int pinStepX, int pinDirX, int pinStepY, int pinDirY, int pinStepZ, int pinDirZ) 
 {
     pStepperX = new AccelStepper(AccelStepper::DRIVER, pinStepX, pinDirX);
     pStepperY = new AccelStepper(AccelStepper::DRIVER, pinStepY, pinDirY);
@@ -21,7 +21,7 @@ Controlador::Controlador(int pinStepX, int pinDirX, int pinStepY, int pinDirY, i
     pStepperY->setPinsInverted(true, false, false);
 }
 
-void Controlador::iniciarControlador()
+void Controlador_t::iniciarControlador()
 {
     Serial.println("[Controlador] Iniciando controlador");
 
@@ -36,8 +36,7 @@ void Controlador::iniciarControlador()
     );
 }
 
-// void Controlador::enviarComando(int G, float X, float Y, float Z)
-void Controlador::enviarComando(GCodeParser *pGCode)
+void Controlador_t::enviarComando(GCodeParser *pGCode)
 {
     static int G = -1;
     static int stepsX, stepsY, stepsZ, stepsI, stepsJ;
@@ -126,17 +125,17 @@ void Controlador::enviarComando(GCodeParser *pGCode)
     mover = true;
 }
 
-void Controlador::calibrar()
+void Controlador_t::calibrar()
 {
     calibrando = true;
     mover = false;
     movendo = false;
 
     Serial.println("[Controlador] Iniciando calibração");
-    pStepperX->setSpeed(-speed);
+    pStepperX->setSpeed(-CALIBRAR_SPPED);
 }
 
-void Controlador::cancelar()
+void Controlador_t::cancelar()
 {
     // para os eixos e levanta a caneta
     while (!filaTargets.empty()) {
@@ -153,7 +152,13 @@ void Controlador::cancelar()
     Serial.println("[Controlador] Cancelando movimento");
 }
 
-void Controlador::nextTarget()
+void Controlador_t::zerarEixos()
+{
+    pStepperY->setCurrentPosition(0);
+    pStepperZ->setCurrentPosition(0);
+}
+
+void Controlador_t::nextTarget()
 {
     float speedX, speedY;
     
@@ -170,20 +175,20 @@ void Controlador::nextTarget()
         float dist = sqrt(pow(target.stepsX - pStepperX->currentPosition(),2) + 
                           pow(target.stepsY - pStepperY->currentPosition(),2) 
                          );
-        speedX = speed * (target.stepsX - pStepperX->currentPosition()) / dist;
-        speedY = speed * (target.stepsY - pStepperY->currentPosition()) / dist;
+        speedX = LINEAR_SPEED * (target.stepsX - pStepperX->currentPosition()) / dist;
+        speedY = LINEAR_SPEED * (target.stepsY - pStepperY->currentPosition()) / dist;
     } else {
-        speedX = speed;
-        speedY = speed;
+        speedX = FAST_SPEED;
+        speedY = FAST_SPEED;
     }
 
     pStepperX->setSpeed(speedX);
     pStepperY->setSpeed(speedY);
-    pStepperZ->setSpeed(speed);
+    pStepperZ->setSpeed(FAST_SPEED);
     Serial.printf("[Controlador] Target X=%d Y=%d Z=%d\n", pStepperX->targetPosition(), pStepperY->targetPosition(), pStepperZ->targetPosition());
 }
 
-void Controlador::arco(ponto_steps_t position, ponto_steps_t target, ponto_steps_t offset, bool is_clockwise_arc)
+void Controlador_t::arco(ponto_steps_t position, ponto_steps_t target, ponto_steps_t offset, bool is_clockwise_arc)
 {
     Serial.println("[Controlador] Interpolando trajetória em arco");
     // baseado em https://github.com/gnea/grbl/blob/master/grbl/motion_control.c
@@ -207,7 +212,7 @@ void Controlador::arco(ponto_steps_t position, ponto_steps_t target, ponto_steps
     int segments = floor(fabs(0.5*angular_travel*radius)/
                           sqrt(ARC_TOLERANCE*(2*radius - ARC_TOLERANCE)) );
 
-    if (segments) {
+    if ((radius != 0) && segments) {
         float theta_per_segment = angular_travel/segments;
 
         float cos_T = 2.0 - theta_per_segment*theta_per_segment;
@@ -247,7 +252,7 @@ void Controlador::arco(ponto_steps_t position, ponto_steps_t target, ponto_steps
     filaTargets.push(target);
 }
 
-void Controlador::taskControlar()
+void Controlador_t::taskControlar()
 {
     xSemaphoreGive(xSemaphoreControlador);
 
@@ -290,9 +295,8 @@ void Controlador::taskControlar()
                 }
             }
         } else { // calibrando
-            if (sensorCurso1.origem()) {
+            if (SensorCurso.origem()) {
                 pStepperX->setCurrentPosition(-MARGEM_X);
-                pStepperY->setCurrentPosition(0);
                 pStepperX->moveTo(0);
                 Evento evento = ORIGEM;
                 if (xQueueSendToBack(xQueueEventos, &evento, portMAX_DELAY) != pdTRUE) {
@@ -313,5 +317,5 @@ void vTaskControlador(void *param)
     // Cria semáforo de controlador
     xSemaphoreControlador = xSemaphoreCreateBinary();
 
-    static_cast<Controlador *>(param)->taskControlar();
+    static_cast<Controlador_t *>(param)->taskControlar();
 }

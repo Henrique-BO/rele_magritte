@@ -3,7 +3,7 @@
 #include "maquina_estados.h"
 #include "interface_wifi.h"
 
-void MaquinaEstados::iniciarMaquinaEstados()
+void MaquinaEstados_t::iniciarMaquinaEstados()
 {
     Serial.println("[MaquinaEstados] Iniciando máquina de estados");
     
@@ -29,8 +29,6 @@ void MaquinaEstados::iniciarMaquinaEstados()
     matrizTransicaoEstados[IDLE][IMPRIMIR].acao = A03;
 
     // Imprimindo
-    // matrizTransicaoEstados[IMPRIMINDO][TERMINADO].estado = CALIBRANDO;
-    // matrizTransicaoEstados[IMPRIMINDO][TERMINADO].acao = A02;
     matrizTransicaoEstados[IMPRIMINDO][TERMINADO].estado = IDLE;
     matrizTransicaoEstados[IMPRIMINDO][TERMINADO].acao = A04;
 
@@ -55,45 +53,45 @@ void MaquinaEstados::iniciarMaquinaEstados()
     );
 }
 
-ProxEstadoAcao MaquinaEstados::obterProxEstadoAcao(Estado estado, Evento evento) {
+ProxEstadoAcao MaquinaEstados_t::obterProxEstadoAcao(Estado estado, Evento evento) {
     return matrizTransicaoEstados[estado][evento];
 }
 
-void MaquinaEstados::executarAcao(Acao acao) {
+void MaquinaEstados_t::executarAcao(Acao acao) {
     switch(acao) {
     case NENHUMA_ACAO:
         break;
     case A01: // Carregar programa
         Serial.println("[MaquinaEstados] Carregando programa");
-        interfaceWifi.carregando = true;
-        while(interfaceWifi.carregando) vTaskDelay(pdMS_TO_TICKS(100));
+        InterfaceWiFi.carregando = true;
+        while(InterfaceWiFi.carregando) vTaskDelay(pdMS_TO_TICKS(100));
         Serial.println("[MaquinaEstados] Programa carregado");
         break;
     case A02: // Calibrar
         Serial.println("[MaquinaEstados] Iniciando calibração");
-        controlador.calibrar();
+        Controlador.calibrar();
         break;
     case A03: // Imprimir
         Serial.println("[MaquinaEstados] Iniciando impressão");
-        interpretadorG.imprimir();
+        InterpretadorG.imprimir();
         break;
     case A04: // Caneta na origem
-        Serial.println("[MaquinaEstados] Caneta na origem");
+        Serial.println("[MaquinaEstados] Concluido");
         break;
     case A05:
         Serial.println("[MaquinaEstados] Cancelando impressão");
-        interpretadorG.cancelar();
-        controlador.cancelar();
+        InterpretadorG.cancelar();
+        Controlador.cancelar();
         break;
     }
 }
 
-Estado MaquinaEstados::getEstado() 
+Estado MaquinaEstados_t::getEstado() 
 {
     return estado;
 }
 
-void MaquinaEstados::taskExecutar()
+void MaquinaEstados_t::taskExecutar()
 {
     while (1) {
         Evento evento;
@@ -115,5 +113,5 @@ void MaquinaEstados::taskExecutar()
 }
 
 void vTaskMaquinaEstados(void *param) {
-    static_cast<MaquinaEstados *>(param)->taskExecutar();
+    static_cast<MaquinaEstados_t *>(param)->taskExecutar();
 }

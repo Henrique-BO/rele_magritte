@@ -1,9 +1,9 @@
 #ifndef SENSOR_CURSO_H
 #define SENSOR_CURSO_H
 
-class SensorCurso {
+class SensorCurso_t {
     public:
-        SensorCurso(int pin): pin(pin){}
+        SensorCurso_t(int pin): pin(pin){}
         void iniciarSensor();
         bool origem();
 
@@ -11,7 +11,6 @@ class SensorCurso {
         int pin;
 };
 
-extern SensorCurso sensorCurso1;
-extern SensorCurso sensorCurso2;
+extern SensorCurso_t SensorCurso;
 
 #endif

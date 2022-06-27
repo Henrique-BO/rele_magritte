@@ -9,6 +9,9 @@
 
 // Velocidade máxima de deslocamento
 #define MAX_SPEED 30000.0
+#define FAST_SPEED 500.0
+#define LINEAR_SPEED 300.0
+#define CALIBRAR_SPPED 100.0
 
 // Resolução de passo de cada eixo
 #define STEPS_POR_MM_X 4.750893824 // 2pi/200*R
@@ -25,7 +28,7 @@
 #define ARC_ANGULAR_TRAVEL_EPSILON 5e-7
 
 // Período da Task do controlador
-#define CONTROLADOR_DELAY_MS 10
+#define CONTROLADOR_DELAY_MS 1
 
 typedef struct {
     int stepsX;
@@ -36,31 +39,28 @@ typedef struct {
 // Wrapper da Task do controlador
 void vTaskControlador(void *param);
 
-class Controlador {
+class Controlador_t {
     public:
-        Controlador(int pinStepX, int pinDirX, int pinStepY, int pinDirY, int pinStepZ, int pinDirZ);
+        Controlador_t(int pinStepX, int pinDirX, int pinStepY, int pinDirY, int pinStepZ, int pinDirZ);
         void iniciarControlador();
         // void enviarComando(int G, float X, float Y, float Z);
         void enviarComando(GCodeParser *pGCode);
         void calibrar();
         void cancelar();
-        void origem();
+        void zerarEixos();
         void taskControlar();
     
     private:
         // seta a posição desejada em cada eixo, calculando e configurando
         // as velocidades para obter movimento retilíneo no plano XY (se linear == true)
         void nextTarget();
-
+        // calcula as posições necessárias para interpolar um arco (G02 ou G03)
         void arco(ponto_steps_t position, ponto_steps_t target, ponto_steps_t offset, bool is_clockwise_arc);
 
         // ponteiros para os motores de passo
         AccelStepper *pStepperX;
         AccelStepper *pStepperY;
         AccelStepper *pStepperZ;
-
-        // velocidade de deslocamento
-        float speed = 50.0; // TODO calcular velocidade efetiva
 
         // flags de controle
         bool calibrando = false;
@@ -72,7 +72,7 @@ class Controlador {
         std::queue<ponto_steps_t> filaTargets;
 };
 
-extern Controlador controlador;
+extern Controlador_t Controlador;
 
 extern SemaphoreHandle_t xSemaphoreControlador;
 

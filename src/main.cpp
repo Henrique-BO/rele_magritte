@@ -8,12 +8,11 @@
 #include "interpretador_g.h"
 #include "sensor_curso.h"
 
-InterfaceWiFi interfaceWifi;
-SensorCurso sensorCurso1(PIN_SENSOR_1);
-SensorCurso sensorCurso2(PIN_SENSOR_2);
-Controlador controlador(PIN_STEP_X, PIN_DIR_X, PIN_STEP_Y, PIN_DIR_Y, PIN_STEP_Z, PIN_DIR_Z);
-InterpretadorG interpretadorG;
-MaquinaEstados maquinaEstados;
+InterfaceWiFi_t InterfaceWiFi;
+SensorCurso_t SensorCurso(PIN_SENSOR);
+Controlador_t Controlador(PIN_STEP_X, PIN_DIR_X, PIN_STEP_Y, PIN_DIR_Y, PIN_STEP_Z, PIN_DIR_Z);
+InterpretadorG_t InterpretadorG;
+MaquinaEstados_t MaquinaEstados;
 
 QueueHandle_t xQueueEventos;
 
@@ -61,10 +60,10 @@ void setup() {
     xQueueEventos = xQueueCreate(QUEUE_EVENTOS_SIZE, sizeof(Evento));
 
     // Inicializa máquina de estados
-    maquinaEstados.iniciarMaquinaEstados();
+    MaquinaEstados.iniciarMaquinaEstados();
 
     // Inicializa a Interface WiFi
-    interfaceWifi.iniciarWiFi();
+    InterfaceWiFi.iniciarWiFi();
 
     // Inicializa a interface Serial
     xTaskCreate(
@@ -77,14 +76,13 @@ void setup() {
     );
 
     // Inicializa os Sensores de fim de curso
-    sensorCurso1.iniciarSensor();
-    sensorCurso2.iniciarSensor();
+    SensorCurso.iniciarSensor();
 
     // Inicializa o controlador
-    controlador.iniciarControlador();
+    Controlador.iniciarControlador();
 
     // Inicializa o interpretador de código G
-    interpretadorG.iniciarInterpretadorG();
+    InterpretadorG.iniciarInterpretadorG();
 
     Serial.println("==== Inicialização concluída! ====\n");
 }

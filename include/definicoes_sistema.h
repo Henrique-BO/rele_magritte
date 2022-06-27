@@ -20,7 +20,6 @@
 #define PIN_DIR_Z 14
 
 // Pinos dos sensores de fim de curso
-#define PIN_SENSOR_1 4
-#define PIN_SENSOR_2 5
+#define PIN_SENSOR 4
 
 #endif

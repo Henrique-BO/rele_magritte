@@ -3,9 +3,9 @@
 
 #include "ESPAsyncWebServer.h"
 
-class InterfaceWiFi {
+class InterfaceWiFi_t {
     public:
-        InterfaceWiFi(): server(AsyncWebServer(80)) {}
+        InterfaceWiFi_t(): server(AsyncWebServer(80)) {}
         void iniciarWiFi();
         void imprimir();
         void cancelar();
@@ -20,6 +20,6 @@ class InterfaceWiFi {
         AsyncWebServer server;
 };
 
-extern InterfaceWiFi interfaceWifi;
+extern InterfaceWiFi_t InterfaceWiFi;
 
 #endif
